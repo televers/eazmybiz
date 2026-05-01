@@ -15,6 +15,9 @@
 /.next/
 /out/
 
+# typescript incremental
+*.tsbuildinfo
+
 # production
 /build
 
