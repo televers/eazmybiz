@@ -1,0 +1,15 @@
+---
+description: Supabase migrations must preserve RLS and tenant isolation
+globs: supabase/migrations/**/*.sql
+alwaysApply: false
+---
+
+# Supabase migrations
+
+When adding or editing SQL under `supabase/migrations/`:
+
+- **Stay RLS-oriented**: tenant-scoped tables need **RLS enabled** and policies that enforce **`organization_id`** (or equivalent), consistent with earlier migrations.
+- **No accidental cross-tenant access**: avoid permissive policies, missing RLS on new tables, or `SECURITY DEFINER` without internal org/auth checks and locked `search_path`.
+- **Storage policies** for org assets should not widen public read unless the product requires it.
+
+The full convention is in the workspace rule **eazmybiz** → **Database migrations (Supabase)**.

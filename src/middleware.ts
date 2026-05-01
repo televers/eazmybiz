@@ -1,0 +1,105 @@
+import { NextResponse, type NextRequest } from "next/server";
+import { createServerClient } from "@supabase/ssr";
+import { isAuthSessionMissingError, type User } from "@supabase/supabase-js";
+
+const publicPaths = new Set([
+  "/",
+  "/login",
+  "/signup",
+  "/forgot-password",
+  "/reset-password",
+  "/auth/callback",
+  "/auth/set-password",
+  "/terms",
+  "/privacy",
+  "/pricing",
+]);
+
+function mustSetPasswordFromInvite(user: User | null): boolean {
+  if (!user?.user_metadata || typeof user.user_metadata !== "object") return false;
+  return (user.user_metadata as Record<string, unknown>).must_set_password === true;
+}
+
+function isProtectedPath(pathname: string) {
+  if (publicPaths.has(pathname)) return false;
+  if (pathname.startsWith("/login") || pathname.startsWith("/signup")) return false;
+  return true;
+}
+
+export async function middleware(request: NextRequest) {
+  let response = NextResponse.next({ request });
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value),
+          );
+          response = NextResponse.next({ request });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options),
+          );
+        },
+      },
+    },
+  );
+
+  let user: User | null = null;
+  try {
+    const { data, error } = await supabase.auth.getUser();
+    if (error && !isAuthSessionMissingError(error)) {
+      console.error("[middleware] Supabase auth getUser error:", error.message);
+    }
+    user = data.user ?? null;
+  } catch (e) {
+    console.error("[middleware] Supabase auth getUser failed (network or Edge fetch):", e);
+  }
+
+  const { pathname } = request.nextUrl;
+
+  if (user && mustSetPasswordFromInvite(user)) {
+    const allowed =
+      pathname === "/auth/set-password" ||
+      pathname === "/auth/callback" ||
+      pathname.startsWith("/auth/callback");
+    if (!allowed) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/auth/set-password";
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+  }
+
+  if (!user && isProtectedPath(pathname)) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    url.searchParams.set("next", pathname);
+    return NextResponse.redirect(url);
+  }
+
+  if (user && (pathname === "/login" || pathname === "/signup" || pathname === "/forgot-password")) {
+    const url = request.nextUrl.clone();
+    url.pathname = mustSetPasswordFromInvite(user) ? "/auth/set-password" : "/dashboard";
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
+
+  return response;
+}
+
+export const config = {
+  matcher: [
+    /*
+     * Skip all Next internals under /_next/ (static chunks, HMR, image optimizer, etc.).
+     * A broad `_next/` prefix also skips odd paths like /_next//_next/static/... from bad
+     * chunk URLs so middleware never runs on those requests (avoids wrong responses / redirects).
+     */
+    "/((?!_next/|favicon.ico|manifest.webmanifest|icon.svg|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+  ],
+};

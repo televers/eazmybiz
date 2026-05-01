@@ -1,0 +1,68 @@
+---
+description: eazmybiz product constraints, stack, and implementation rules
+alwaysApply: true
+---
+
+# eazmybiz
+
+## Source of truth
+
+- Product scope, tiers, limits, and open questions: **`docs/PRODUCT.md`**. Prefer updating that doc over duplicating long specs in chat.
+
+## Stack (MVP)
+
+- **Next.js** (App Router), **TypeScript**, **Tailwind** as established in repo.
+- **Supabase**: Postgres, Auth, **Row Level Security** on tenant-scoped tables, Storage for logos and generated files.
+- **PWA**: same app as web; desktop-first UX, touch-friendly secondary flows.
+
+## Multi-tenancy and security
+
+- Every business-scoped row is tied to **`organization_id`** (or equivalent). No cross-tenant queries without explicit super-admin tooling (future).
+- Enforce access with **RLS** + app checks; never rely on client-only filtering for authorization.
+
+## Database migrations (Supabase) — always RLS-oriented
+
+**Keep this in mind for every migration.** The data model is **tenant-isolated**; new schema must stay consistent with that.
+
+- **RLS-first:** Enable **Row Level Security** on tenant-scoped tables. Policies must restrict rows by **`organization_id`** (or equivalent) and **organizational membership**, following patterns in existing `supabase/migrations/*.sql`. Do not ship new tenant tables **without** RLS unless the table is intentionally global (rare—and must be justified).
+- **Policies:** `using` / `with check` must match how the app accesses data; avoid broad `true` on tenant data. Prefer the same policy style and naming as nearby migrations.
+- **RPCs and SQL functions:** Prefer **`SECURITY INVOKER`**. If **`SECURITY DEFINER`** is required, set a fixed **`search_path`**, validate **`organization_id`** / auth inside the function, and **`grant execute`** only to roles that need it (`authenticated`, etc.)—mirror existing migrations.
+- **Storage:** New buckets/policies for org-owned files should tie access to org membership, not public read, unless product explicitly requires a public object URL (then document the tradeoff).
+
+## Plans and branding
+
+- Plans: **Free** (1 company, 2 users), **Pro** (2 companies, 10 users), **Max** (5 companies, 50 users) — see `docs/PRODUCT.md`.
+- **Free:** customer-facing outputs show **“Powered by eazmybiz”** (not watermark-free); **Pro / Max:** watermark-free outputs (no powered-by). **Org logo** allowed per product. See `docs/PRODUCT.md` §2.1.1 and pricing §2.1.3.
+
+## Quotas (critical)
+
+- Monthly period: **`Asia/Kolkata`**, period key **`YYYY-MM`** in IST; reset at IST midnight on the 1st.
+- Increment usage **only** on transition to **issued** / **finalized** (not drafts). **Once per record** on first issue — re-print does not increment.
+- Counters (Free; Pro/Max differ): **30/month** combined quotation + packing list + delivery challan; **60/month** gate passes; **60/month** visitor passes — all **per company** (see `docs/PRODUCT.md` for Pro/Max).
+
+## Geography
+
+- Model **country/region** on organization; **India-first** defaults (GSTIN, states, challan-related fields) without blocking other locales later.
+
+## Code style
+
+- Match existing patterns in the repo; **minimal scope** — no drive-by refactors or unrelated files.
+- Do **not** add README/docs/markdown files unless the user asks (except updates to **`docs/PRODUCT.md`** when product facts change).
+
+## UI — primary actions
+
+- **Primary CTAs** (Add, New, Save, Submit, Continue): solid **sky** — use **`@/lib/ui/primary-button`** (`primaryButtonMd`, `primaryButtonCompact`, `primaryButtonXs`, `primaryButtonBlock`) so links and buttons match the portal theme.
+- Do **not** use neutral bordered pills for primary actions; reserve outline/ghost styles for secondary actions. Destructive actions stay red.
+
+## Pre-launch (when user says “ready to launch” or similar)
+
+- **Remind** them of this short security checklist before shipping:
+  1. **Service role**: `SUPABASE_SERVICE_ROLE_KEY` only on the server (hosting secrets); never in repo, client, or public env. Prefer separate staging vs prod keys/projects.
+  2. **Supabase access**: Minimal dashboard users; **2FA** on project owners.
+  3. **Auth CAPTCHA**: Supabase **Authentication → CAPTCHA** (Cloudflare Turnstile) enabled in production; **`NEXT_PUBLIC_TURNSTILE_SITE_KEY`** set in hosting env so sign-in / sign-up / password reset send a valid `captchaToken` (see app login/signup/forgot-password).
+  4. **New schema**: Any new tables/RPCs stay **RLS-scoped** and org-safe — see **Database migrations (Supabase)** above.
+  5. **Follow-ups (not blockers)**: Harden `loadMemberIdentities` to only resolve IDs that are org members; visitor photos use a **private** bucket + short-lived **signed URLs** (see migration `visitor_photos_private_bucket`).
+
+## Not this project
+
+- This is **not** the next-meal or unrelated apps — no shared secrets, copy-paste of unrelated product logic, or mixed deployment config.
