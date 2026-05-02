@@ -112,6 +112,6 @@ export const config = {
      * A broad `_next/` prefix also skips odd paths like /_next//_next/static/... from bad
      * chunk URLs so middleware never runs on those requests (avoids wrong responses / redirects).
      */
-    "/((?!_next/|favicon.ico|manifest.webmanifest|icon.svg|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/|favicon.ico|manifest.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
