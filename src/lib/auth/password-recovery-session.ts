@@ -26,6 +26,7 @@ export function isPasswordRecoverySession(session: Session | null | undefined): 
   const amr = payload.amr;
   if (!Array.isArray(amr)) return false;
   return amr.some((entry: unknown) => {
+    if (typeof entry === "string") return entry === "recovery";
     if (entry && typeof entry === "object" && "method" in entry) {
       return (entry as { method?: string }).method === "recovery";
     }
