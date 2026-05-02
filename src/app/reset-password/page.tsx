@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { consumeEmailAuthRedirect } from "@/lib/auth/consume-email-auth-redirect";
 import { createClient } from "@/lib/supabase/client";
 import { primaryButtonMd } from "@/lib/ui/primary-button";
 
@@ -16,14 +17,28 @@ export default function ResetPasswordPage() {
   const [hasSession, setHasSession] = useState(false);
 
   useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    let cancelled = false;
+    (async () => {
+      const supabase = createClient();
+      const result = await consumeEmailAuthRedirect(supabase);
+      if (cancelled) return;
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (cancelled) return;
       setReady(true);
       setHasSession(!!session);
       if (!session) {
-        setError("This link is invalid or has expired. Request a new reset from the sign-in page.");
+        setError(
+          !result.ok && result.kind === "error"
+            ? "This reset link is invalid, expired, or already used. Request a new one from the sign-in page."
+            : "This link is invalid or has expired. Request a new reset from the sign-in page.",
+        );
       }
-    });
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   async function onSubmit(e: React.FormEvent) {
@@ -52,7 +67,7 @@ export default function ResetPasswordPage() {
   if (!ready) {
     return (
       <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4">
-        <p className="text-sm text-[var(--muted)]">Loading…</p>
+        <p className="text-sm text-[var(--muted)]">Opening your reset link…</p>
       </div>
     );
   }

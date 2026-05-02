@@ -9,27 +9,12 @@
  */
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { EmailOtpType } from "@supabase/supabase-js";
+import { consumeEmailAuthRedirect } from "@/lib/auth/consume-email-auth-redirect";
 import { createClient } from "@/lib/supabase/client";
-
-const OTP_TYPES = new Set<EmailOtpType>([
-  "signup",
-  "recovery",
-  "invite",
-  "email_change",
-  "email",
-  "magiclink",
-]);
 
 function safeNextPath(raw: string | null): string {
   if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return "/dashboard";
   return raw;
-}
-
-function parseOtpType(s: string | null): EmailOtpType | null {
-  if (!s) return null;
-  const t = s as EmailOtpType;
-  return OTP_TYPES.has(t) ? t : null;
 }
 
 export default function AuthCallbackPage() {
@@ -49,56 +34,27 @@ export default function AuthCallbackPage() {
         router.replace("/login?error=auth_callback");
       };
 
-      const code = params.get("code");
-      if (code) {
-        const { error } = await supabase.auth.exchangeCodeForSession(code);
-        if (cancelled) return;
-        if (!error) {
-          router.replace(next);
-          router.refresh();
-          return;
-        }
-        fail();
+      const result = await consumeEmailAuthRedirect(supabase);
+      if (cancelled) return;
+
+      if (result.ok) {
+        router.replace(next);
+        router.refresh();
         return;
       }
 
-      const token_hash = params.get("token_hash");
-      const type = parseOtpType(params.get("type"));
-      if (token_hash && type) {
-        const { error } = await supabase.auth.verifyOtp({ token_hash, type });
-        if (cancelled) return;
-        if (!error) {
-          router.replace(next);
-          router.refresh();
-          return;
-        }
-        fail();
-        return;
-      }
-
-      const hp = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-      const access_token = hp.get("access_token");
-      const refresh_token = hp.get("refresh_token");
-      if (access_token && refresh_token) {
-        const { error } = await supabase.auth.setSession({
-          access_token,
-          refresh_token,
-        });
-        if (cancelled) return;
-        if (!error) {
-          window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+      if (result.kind === "no_tokens") {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (session) {
           router.replace(next);
           router.refresh();
           return;
         }
       }
 
-      if (params.get("error")) {
-        if (!cancelled) fail();
-        return;
-      }
-
-      if (!cancelled) fail();
+      fail();
     })();
 
     return () => {

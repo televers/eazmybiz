@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useRef, useState } from "react";
 import type { TurnstileInstance } from "@marsidev/react-turnstile";
+import { getClientAuthOrigin } from "@/lib/auth/site-origin-client";
 import { createClient } from "@/lib/supabase/client";
 import { AuthTurnstile } from "@/components/auth/auth-turnstile";
 import { primaryButtonMd } from "@/lib/ui/primary-button";
@@ -30,8 +31,9 @@ export default function ForgotPasswordPage() {
     }
     setLoading(true);
     const supabase = createClient();
-    const origin = typeof window !== "undefined" ? window.location.origin : "";
-    const redirectTo = `${origin}/auth/callback?next=${encodeURIComponent("/reset-password")}`;
+    const origin = getClientAuthOrigin();
+    /** Single-path redirect_to — nested `?next=` on `/auth/callback` is often stripped by email providers / Supabase. */
+    const redirectTo = `${origin}/reset-password`;
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
       redirectTo,
       ...(captchaRequired && captchaToken ? { captchaToken } : {}),
