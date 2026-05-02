@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org";
 import { PartyTransactions } from "@/components/parties/party-transactions";
@@ -8,6 +9,16 @@ import { partyHasRelatedDocuments } from "@/lib/parties/party-documents";
 import { canEditOrgMaintainedRecord } from "@/lib/access/org-maintained-record";
 import { resolveActivityActorLabels } from "@/lib/activity-actor-labels";
 import { formatDateTimeIst } from "@/lib/packing/date-format";
+
+function PartyTransactionsFallback() {
+  return (
+    <div className="space-y-4" aria-busy aria-label="Loading related documents">
+      <div className="h-5 w-48 animate-pulse rounded bg-[var(--muted)]/15" />
+      <div className="h-40 animate-pulse rounded-lg border border-[var(--border)] bg-[var(--muted)]/10" />
+      <div className="h-40 animate-pulse rounded-lg border border-[var(--border)] bg-[var(--muted)]/10" />
+    </div>
+  );
+}
 
 export default async function PartyDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -69,7 +80,9 @@ export default async function PartyDetailPage({ params }: { params: Promise<{ id
         billingCountryCode={ctx.entitlement?.billing_country_code ?? null}
       />
 
-      <PartyTransactions organizationId={ctx.organization.id} partyId={party.id as string} />
+      <Suspense fallback={<PartyTransactionsFallback />}>
+        <PartyTransactions organizationId={ctx.organization.id} partyId={party.id as string} />
+      </Suspense>
 
       {activity.length > 0 ? (
         <section className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 sm:p-5">

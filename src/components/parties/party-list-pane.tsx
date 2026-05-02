@@ -59,7 +59,7 @@ export function PartyListPane({
       <aside className="flex min-h-0 flex-1 flex-col">
         <div className="border-b border-[var(--border)] p-3">
           <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">Parties</h2>
-          <button type="button" onClick={() => setCreateOpen(true)} className={`mb-3 ${primaryButtonBlock}`}>
+          <button type="button" onClick={() => setCreateOpen(true)} className={`mb-3 touch-manipulation ${primaryButtonBlock}`}>
             Add party
           </button>
           <input
@@ -79,8 +79,14 @@ export function PartyListPane({
                 <div className="flex items-center gap-1 py-2">
                   <Link
                     href={`/parties/${p.id}`}
+                    prefetch
+                    onMouseEnter={() => router.prefetch(`/parties/${p.id}`)}
+                    onFocus={() => router.prefetch(`/parties/${p.id}`)}
+                    onTouchStart={() => {
+                      router.prefetch(`/parties/${p.id}`);
+                    }}
                     className={
-                      "min-w-0 flex-1 truncate rounded-md px-2 py-1.5 " +
+                      "min-w-0 flex-1 touch-manipulation truncate rounded-md px-2 py-1.5 active:opacity-70 " +
                       (active ? "bg-sky-600/15 font-medium text-sky-800 dark:text-sky-200" : "hover:bg-[var(--border)]")
                     }
                   >
@@ -93,7 +99,7 @@ export function PartyListPane({
                       e.preventDefault();
                       setEditParty(p);
                     }}
-                    className="shrink-0 rounded-md p-2 text-[var(--muted)] hover:bg-[var(--border)] hover:text-[var(--foreground)]"
+                    className="shrink-0 touch-manipulation rounded-md p-2 text-[var(--muted)] hover:bg-[var(--border)] hover:text-[var(--foreground)] active:opacity-70"
                   >
                     <IconPencil />
                   </button>

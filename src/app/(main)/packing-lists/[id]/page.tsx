@@ -144,7 +144,7 @@ export default async function PackingListDetailPage({
                 {pkg.package_size?.trim() ? ` · ${formatPackageSizeCm(pkg.package_size)}` : ""}
                 {pkg.package_weight_kg != null ? ` · ${formatGrossWeightKg(pkg.package_weight_kg)}` : ""}
               </div>
-              <div className="-mx-1 overflow-x-auto overscroll-x-contain pb-1 touch-pan-x [-webkit-overflow-scrolling:touch] sm:mx-0">
+              <div className="-mx-1 overflow-x-auto overscroll-x-contain pb-1 [-webkit-overflow-scrolling:touch] sm:mx-0">
                 <table className="w-full min-w-[320px] text-left text-sm">
                 <thead className="text-[var(--muted)]">
                   <tr>

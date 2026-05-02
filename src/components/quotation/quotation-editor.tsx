@@ -789,7 +789,7 @@ export function QuotationEditor({
       <div className="space-y-3">
         <h3 className="text-sm font-semibold">Line items</h3>
         <p className="text-xs text-[var(--muted)] lg:hidden">Swipe sideways to see all columns.</p>
-        <div className="-mx-1 overflow-x-auto overscroll-x-contain pb-1 touch-pan-x [-webkit-overflow-scrolling:touch] sm:mx-0 lg:touch-auto">
+        <div className="-mx-1 overflow-x-auto overscroll-x-contain pb-1 [-webkit-overflow-scrolling:touch] sm:mx-0 lg:touch-auto">
           <table className="w-full min-w-[960px] border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-[var(--border)] text-[var(--muted)]">

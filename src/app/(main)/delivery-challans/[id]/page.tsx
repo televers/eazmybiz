@@ -144,7 +144,7 @@ export default async function DeliveryChallanDetailPage({
 
       <div className="space-y-1">
         <p className="text-xs text-[var(--muted)] lg:hidden">Swipe sideways to see all columns.</p>
-        <div className="-mx-1 overflow-x-auto overscroll-x-contain rounded-lg border border-[var(--border)] pb-1 touch-pan-x [-webkit-overflow-scrolling:touch] sm:mx-0 lg:touch-auto">
+        <div className="-mx-1 overflow-x-auto overscroll-x-contain rounded-lg border border-[var(--border)] pb-1 [-webkit-overflow-scrolling:touch] sm:mx-0 lg:touch-auto">
         <table className="w-full min-w-[720px] text-left text-sm">
           <thead className="bg-[var(--card)] text-[var(--muted)]">
             <tr>

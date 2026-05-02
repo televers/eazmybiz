@@ -4,8 +4,9 @@
  */
 
 /** Wrap the `<table>` (inside a bordered card). Enables touch panning and overflow-x scroll on narrow viewports. */
+/** Note: avoid `touch-pan-x` — it sets touch-action: pan-x and blocks vertical page scroll when the gesture starts on the table. */
 export const documentListTableScrollAreaClassName =
-  "max-lg:-mx-1 max-lg:overflow-x-auto max-lg:overscroll-x-contain max-lg:touch-pan-x max-lg:[-webkit-overflow-scrolling:touch] max-lg:pb-1 max-lg:[scrollbar-width:thin] lg:mx-0 lg:overflow-visible lg:pb-0";
+  "max-lg:-mx-1 max-lg:overflow-x-auto max-lg:overscroll-x-contain max-lg:[-webkit-overflow-scrolling:touch] max-lg:pb-1 max-lg:[scrollbar-width:thin] lg:mx-0 lg:overflow-visible lg:pb-0";
 
 /** Keep columns from collapsing when the viewport is narrower than the table. */
 export const documentListTableMinWidthClassName = "min-w-[960px]";

@@ -131,13 +131,14 @@ export default async function VisitorPassPrintPage({
     layout === "a5_foldable"
       ? `
             @media print {
-              @page { size: A5 portrait; margin: 3mm; }
+              @page { size: A5 portrait; margin: 6mm; }
+              html, body { height: auto !important; min-height: 0 !important; }
               body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
               .visitor-pass-a5 {
                 box-sizing: border-box;
                 min-height: 0 !important;
-                height: 204mm !important;
-                max-height: 204mm !important;
+                height: 198mm !important;
+                max-height: 198mm !important;
                 width: 100% !important;
                 max-width: none !important;
               }
@@ -156,7 +157,7 @@ export default async function VisitorPassPrintPage({
           `;
 
   return (
-    <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
+    <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] print:min-h-0 print:h-auto">
       <style dangerouslySetInnerHTML={{ __html: printPageCss }} />
       <div className="p-4 print:hidden">
         <div className="mx-auto flex max-w-lg flex-col gap-3">
@@ -182,7 +183,7 @@ export default async function VisitorPassPrintPage({
         </div>
       </div>
 
-      <div className="mx-auto flex flex-col items-center gap-10 p-4 print:m-0 print:block print:gap-0 print:p-0">
+      <div className="mx-auto flex flex-col items-center gap-10 p-4 print:m-0 print:block print:min-h-0 print:gap-0 print:p-0">
         {layout === "a5_foldable" ? (
           <VisitorPassPrintA5View {...common} orgAddressBlock={orgAddressBlock} />
         ) : (

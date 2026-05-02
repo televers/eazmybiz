@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import type { PartySnapshot } from "@/lib/packing/types";
 
@@ -118,3 +119,6 @@ export async function loadPartiesWithAddresses(organizationId: string): Promise<
   }
   return out;
 }
+
+/** Deduplicates within one RSC request (e.g. layout + other work sharing the same pass). */
+export const loadPartiesWithAddressesCached = cache(loadPartiesWithAddresses);

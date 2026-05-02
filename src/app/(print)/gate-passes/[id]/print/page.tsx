@@ -87,13 +87,14 @@ export default async function GatePassPrintPage({
     : null;
 
   return (
-    <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] print:bg-white">
+    <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] print:min-h-0 print:h-auto print:bg-white">
       <GatePassAutoprint />
       <style
         dangerouslySetInnerHTML={{
           __html: `
             @media print {
-              @page { size: A5 portrait; margin: 10mm; }
+              @page { size: A5 portrait; margin: 6mm; }
+              html, body { height: auto !important; min-height: 0 !important; }
               body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
             }
           `,

@@ -1,6 +1,6 @@
 import { assertModuleAccess } from "@/lib/access";
 import { getOrgContext, isAccountOwnerForActiveOrg } from "@/lib/org";
-import { loadPartiesWithAddresses } from "@/lib/parties/load-parties";
+import { loadPartiesWithAddressesCached } from "@/lib/parties/load-parties";
 import { PartyListPane } from "@/components/parties/party-list-pane";
 
 export default async function PartiesLayout({ children }: { children: React.ReactNode }) {
@@ -8,7 +8,7 @@ export default async function PartiesLayout({ children }: { children: React.Reac
   if (!ctx) return null;
   assertModuleAccess(ctx, "parties");
 
-  const rows = await loadPartiesWithAddresses(ctx.organization.id);
+  const rows = await loadPartiesWithAddressesCached(ctx.organization.id);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col lg:flex-row">

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { MobileIssuedPdfPreview } from "@/components/documents/mobile-issued-pdf-preview";
 
 type Props = {
   /** When set with downloadPdfHref, viewports below lg show an embedded PDF (same as download). */
@@ -20,19 +21,10 @@ export function SalesDocumentScreenPrintPreview({ inlinePdfSrc, downloadPdfHref,
       <>
         <div className="lg:hidden space-y-2">
           <p className="text-xs text-[var(--muted)]">
-            Preview matches the PDF. Pinch or double-tap to zoom.
+            In-app preview renders the PDF as pages you can scroll. Use <strong>Open in new tab</strong> for your
+            browser viewer, or <strong>Download PDF</strong> below to save the file.
           </p>
-          <iframe
-            title="PDF preview"
-            src={inlinePdfSrc!}
-            className="h-[min(78dvh,1200px)] w-full rounded-lg border border-[var(--border)] bg-neutral-100 dark:bg-neutral-900"
-          />
-          <p className="text-xs text-[var(--muted)]">
-            <a href={downloadPdfHref!} className="font-medium text-sky-600 underline">
-              Download PDF
-            </a>{" "}
-            to open in another app.
-          </p>
+          <MobileIssuedPdfPreview src={inlinePdfSrc!} />
         </div>
         <div className="hidden lg:block">{children}</div>
       </>
@@ -41,7 +33,7 @@ export function SalesDocumentScreenPrintPreview({ inlinePdfSrc, downloadPdfHref,
 
   return (
     <div className="lg:contents">
-      <div className="-mx-1 overflow-x-auto overscroll-x-contain pb-1 touch-pan-x [-webkit-overflow-scrolling:touch] lg:mx-0 lg:overflow-visible lg:pb-0">
+      <div className="-mx-1 overflow-x-auto overscroll-x-contain pb-1 [-webkit-overflow-scrolling:touch] lg:mx-0 lg:overflow-visible lg:pb-0">
         <div className="w-full min-w-[794px] max-w-full lg:min-w-0">{children}</div>
       </div>
     </div>

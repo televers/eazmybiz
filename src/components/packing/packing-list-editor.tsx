@@ -761,7 +761,7 @@ export function PackingListEditor({
             </div>
 
             <p className="text-xs text-[var(--muted)] lg:hidden">Swipe sideways for all line columns.</p>
-            <div className="-mx-1 overflow-x-auto overscroll-x-contain pb-1 touch-pan-x [-webkit-overflow-scrolling:touch] sm:mx-0 lg:touch-auto">
+            <div className="-mx-1 overflow-x-auto overscroll-x-contain pb-1 [-webkit-overflow-scrolling:touch] sm:mx-0 lg:touch-auto">
               <table className="w-full min-w-[560px] text-left text-sm">
                 <thead>
                   <tr className="border-b border-[var(--border)] text-[var(--muted)]">
