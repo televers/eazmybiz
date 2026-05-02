@@ -5,6 +5,11 @@ import { getOrgContext } from "@/lib/org";
 import { getOrgCheckpointFlags, canRecordMaterialMovement } from "@/lib/access/checkpoints";
 import { formatCreatedByLabel } from "@/lib/documents/created-by-label";
 import { DocumentRowActionsMenu } from "@/components/documents/document-row-actions-menu";
+import {
+  documentListTableCardClassName,
+  documentListTableClassName,
+  documentListTableScrollAreaClassName,
+} from "@/lib/ui/document-list-table";
 import { orgCalendarHasReachedGatePassDate } from "@/lib/gate-pass/gate-pass-date-policy";
 import {
   canRecordMaterialMovementWithinIssueWindow,
@@ -44,8 +49,9 @@ export default async function GatePassesPage() {
         </Link>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-[var(--border)]">
-        <table className="w-full text-left text-sm">
+      <div className={documentListTableCardClassName}>
+        <div className={documentListTableScrollAreaClassName}>
+          <table className={documentListTableClassName}>
           <thead className="bg-[var(--card)] text-[var(--muted)]">
             <tr>
               <th className="px-4 py-3 font-medium">Number</th>
@@ -172,6 +178,7 @@ export default async function GatePassesPage() {
             ) : null}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

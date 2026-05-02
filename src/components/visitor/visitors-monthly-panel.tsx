@@ -12,6 +12,11 @@ import {
 } from "@/lib/visitors/check-in-overdue";
 import { formatCreatedByLabel } from "@/lib/documents/created-by-label";
 import { DocumentRowActionsMenu } from "@/components/documents/document-row-actions-menu";
+import {
+  documentListTableCardClassName,
+  documentListTableClassName,
+  documentListTableScrollAreaClassName,
+} from "@/lib/ui/document-list-table";
 
 export function VisitorsMonthlyPanel({
   rows,
@@ -78,8 +83,9 @@ export function VisitorsMonthlyPanel({
             </button>
           </div>
 
-          <div className="overflow-hidden rounded-lg border border-[var(--border)]">
-            <table className="w-full text-left text-sm">
+          <div className={documentListTableCardClassName}>
+            <div className={documentListTableScrollAreaClassName}>
+              <table className={documentListTableClassName}>
               <thead className="bg-[var(--card)] text-[var(--muted)]">
                 <tr>
                   <th className="px-4 py-3 font-medium">Pass no.</th>
@@ -145,6 +151,7 @@ export function VisitorsMonthlyPanel({
                 ) : null}
               </tbody>
             </table>
+            </div>
           </div>
         </div>
       )}

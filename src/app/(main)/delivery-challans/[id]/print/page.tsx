@@ -118,15 +118,11 @@ export default async function DeliveryChallanPrintPage({
           {r.status === "draft" ? <IssueDcButton id={id} /> : null}
         </div>
 
-        <p className="mt-6 text-center text-sm text-[var(--muted)] print:hidden">
-          {r.status === "issued" ? (
-            <>
-              Use <strong>Download PDF</strong> for the generated file, or <strong>Ctrl+P</strong> for print preview.
-            </>
-          ) : (
-            <>Use your browser print dialog to save as PDF.</>
-          )}
-        </p>
+        {r.status === "draft" ? (
+          <p className="mt-6 text-center text-sm text-[var(--muted)] print:hidden">
+            Use your browser print dialog to save as PDF.
+          </p>
+        ) : null}
       </div>
     </div>
   );

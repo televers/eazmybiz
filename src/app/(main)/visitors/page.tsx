@@ -23,6 +23,11 @@ import {
 import { formatCreatedByLabel } from "@/lib/documents/created-by-label";
 import { DocumentRowActionsMenu } from "@/components/documents/document-row-actions-menu";
 import { getOrgCheckpointFlags, canRecordVisitorCheckpoint } from "@/lib/access/checkpoints";
+import {
+  documentListTableCardClassName,
+  documentListTableClassName,
+  documentListTableScrollAreaClassName,
+} from "@/lib/ui/document-list-table";
 
 function VisitorTable({
   rows,
@@ -34,8 +39,9 @@ function VisitorTable({
   orgTodayYmd: string;
 }) {
   return (
-    <div className="overflow-hidden rounded-lg border border-[var(--border)]">
-      <table className="w-full text-left text-sm">
+    <div className={documentListTableCardClassName}>
+      <div className={documentListTableScrollAreaClassName}>
+        <table className={documentListTableClassName}>
         <thead className="bg-[var(--card)] text-[var(--muted)]">
           <tr>
             <th className="px-4 py-3 font-medium">Pass no.</th>
@@ -101,6 +107,7 @@ function VisitorTable({
           ) : null}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

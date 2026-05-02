@@ -100,16 +100,11 @@ export default async function PackingListPrintPage({
           {row.status === "draft" ? <IssuePackingListButton id={id} /> : null}
         </div>
 
-        {row.status === "issued" ? (
-          <p className="mt-6 text-center text-sm text-[var(--muted)] print:hidden">
-            Use <strong>Download PDF</strong> for a file without browser chrome, or <strong>Ctrl+P</strong> for print
-            preview.
-          </p>
-        ) : (
+        {row.status === "draft" ? (
           <p className="mt-6 text-center text-sm text-[var(--muted)] print:hidden">
             Draft — issue the packing list to enable PDF download.
           </p>
-        )}
+        ) : null}
       </div>
     </div>
   );

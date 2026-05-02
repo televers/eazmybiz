@@ -7,17 +7,23 @@ import {
 } from "@/lib/parties/party-documents";
 import { primaryButtonCompact } from "@/lib/ui/primary-button";
 import { DocumentRowActionsMenu } from "@/components/documents/document-row-actions-menu";
+import {
+  documentListTableCardWithBgClassName,
+  documentListTableClassName,
+  documentListTableScrollAreaClassName,
+} from "@/lib/ui/document-list-table";
 
 function QuotationsSection({ rows, empty }: { rows: PartyQuotationListRow[]; empty: string }) {
   return (
-    <div className="overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--card)]">
+    <div className={documentListTableCardWithBgClassName}>
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border)] bg-[var(--card)] px-4 py-2">
         <h3 className="text-sm font-semibold">Quotations</h3>
         <Link href="/quotations/new" className={primaryButtonCompact}>
           Add new quotation
         </Link>
       </div>
-      <table className="w-full text-left text-sm">
+      <div className={documentListTableScrollAreaClassName}>
+        <table className={documentListTableClassName}>
         <thead className="bg-[var(--card)] text-[var(--muted)]">
           <tr className="border-b border-[var(--border)]">
             <th className="px-4 py-3 font-medium">Number</th>
@@ -60,20 +66,22 @@ function QuotationsSection({ rows, empty }: { rows: PartyQuotationListRow[]; emp
           ) : null}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }
 
 function PackingSection({ rows, empty }: { rows: PartyPackingListRow[]; empty: string }) {
   return (
-    <div className="overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--card)]">
+    <div className={documentListTableCardWithBgClassName}>
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border)] bg-[var(--card)] px-4 py-2">
         <h3 className="text-sm font-semibold">Packing lists</h3>
         <Link href="/packing-lists/new" className={primaryButtonCompact}>
           Add new packing list
         </Link>
       </div>
-      <table className="w-full text-left text-sm">
+      <div className={documentListTableScrollAreaClassName}>
+        <table className={documentListTableClassName}>
         <thead className="bg-[var(--card)] text-[var(--muted)]">
           <tr className="border-b border-[var(--border)]">
             <th className="px-4 py-3 font-medium">Number</th>
@@ -116,20 +124,22 @@ function PackingSection({ rows, empty }: { rows: PartyPackingListRow[]; empty: s
           ) : null}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }
 
 function ChallansSection({ rows, empty }: { rows: PartyDcListRow[]; empty: string }) {
   return (
-    <div className="overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--card)]">
+    <div className={documentListTableCardWithBgClassName}>
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border)] bg-[var(--card)] px-4 py-2">
         <h3 className="text-sm font-semibold">Delivery challans</h3>
         <Link href="/delivery-challans/new" className={primaryButtonCompact}>
           Add new challan
         </Link>
       </div>
-      <table className="w-full text-left text-sm">
+      <div className={documentListTableScrollAreaClassName}>
+        <table className={documentListTableClassName}>
         <thead className="bg-[var(--card)] text-[var(--muted)]">
           <tr className="border-b border-[var(--border)]">
             <th className="px-4 py-3 font-medium">Number</th>
@@ -184,6 +194,7 @@ function ChallansSection({ rows, empty }: { rows: PartyDcListRow[]; empty: strin
           ) : null}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

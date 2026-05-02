@@ -8,6 +8,11 @@ import { billToFromJson, linesFromJson, additionalChargesFromJson } from "@/lib/
 import { quotationTotalsWithAdditionalCharges } from "@/lib/quotation/compute";
 import { formatCreatedByLabel } from "@/lib/documents/created-by-label";
 import { DocumentRowActionsMenu } from "@/components/documents/document-row-actions-menu";
+import {
+  documentListTableCardClassName,
+  documentListTableClassName,
+  documentListTableScrollAreaClassName,
+} from "@/lib/ui/document-list-table";
 
 export default async function QuotationsPage() {
   const ctx = await getOrgContext();
@@ -36,8 +41,9 @@ export default async function QuotationsPage() {
         </Link>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-[var(--border)]">
-        <table className="w-full text-left text-sm">
+      <div className={documentListTableCardClassName}>
+        <div className={documentListTableScrollAreaClassName}>
+          <table className={documentListTableClassName}>
           <thead className="bg-[var(--card)] text-[var(--muted)]">
             <tr>
               <th className="px-4 py-3 font-medium">Number</th>
@@ -107,6 +113,7 @@ export default async function QuotationsPage() {
             ) : null}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

@@ -9,6 +9,11 @@ import { dcLinesFromJson } from "@/lib/delivery-challan/parse";
 import { dcTotalsWithAdditionalCharges } from "@/lib/delivery-challan/compute";
 import { formatCreatedByLabel } from "@/lib/documents/created-by-label";
 import { DocumentRowActionsMenu } from "@/components/documents/document-row-actions-menu";
+import {
+  documentListTableCardClassName,
+  documentListTableClassName,
+  documentListTableScrollAreaClassName,
+} from "@/lib/ui/document-list-table";
 
 export default async function DeliveryChallansPage() {
   const ctx = await getOrgContext();
@@ -37,8 +42,9 @@ export default async function DeliveryChallansPage() {
         </Link>
       </div>
 
-      <div className="overflow-x-auto overflow-hidden rounded-lg border border-[var(--border)]">
-        <table className="w-full min-w-[800px] text-left text-sm">
+      <div className={documentListTableCardClassName}>
+        <div className={documentListTableScrollAreaClassName}>
+          <table className={documentListTableClassName}>
           <thead className="bg-[var(--card)] text-[var(--muted)]">
             <tr>
               <th className="px-4 py-3 font-medium">Number</th>
@@ -122,6 +128,7 @@ export default async function DeliveryChallansPage() {
             ) : null}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );
