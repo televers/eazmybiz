@@ -17,8 +17,9 @@ function safeFilename(s: string): string {
   return t.slice(0, 80) || "quotation";
 }
 
-export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const inline = new URL(request.url).searchParams.get("inline") === "1";
   const supabase = await createClient();
 
   const {
@@ -121,7 +122,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     status: 200,
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="${filename}"`,
+      "Content-Disposition": `${inline ? "inline" : "attachment"}; filename="${filename}"`,
       "Cache-Control": "private, no-store",
     },
   });

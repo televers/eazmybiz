@@ -11,6 +11,7 @@ import { DeliveryChallanPrintView } from "@/components/delivery-challan/delivery
 import { primaryButtonMd } from "@/lib/ui/primary-button";
 import { parsePackingListTemplateId } from "@/lib/packing/packing-list-templates";
 import { IssueDcButton } from "../ui";
+import { SalesDocumentScreenPrintPreview } from "@/components/documents/sales-document-screen-print-preview";
 
 export default async function DeliveryChallanPrintPage({
   params,
@@ -73,29 +74,34 @@ export default async function DeliveryChallanPrintPage({
           </Link>
         </div>
 
-        <DeliveryChallanPrintView
-          template={template}
-          org={ctx.organization}
-          docNumber={r.doc_number}
-          documentDate={r.document_date}
-          issuedAt={r.issued_at}
-          status={r.status}
-          currency={currency}
-          billTo={billTo}
-          shipTo={shipTo}
-          lines={lines}
-          additionalCharges={additionalCharges}
-          poNo={r.po_no}
-          poDate={r.po_date}
-          lrDocketNo={r.lr_docket_no}
-          ewayBillNo={r.eway_bill_no}
-          transportName={r.transport_name}
-          transporterId={r.transporter_id}
-          vehicleNo={r.vehicle_no}
-          notes={r.notes}
-          poweredBy={powered}
-          logoUrl={logoUrl}
-        />
+        <SalesDocumentScreenPrintPreview
+          inlinePdfSrc={r.status === "issued" ? `/api/delivery-challans/${id}/pdf?inline=1` : null}
+          downloadPdfHref={r.status === "issued" ? `/api/delivery-challans/${id}/pdf` : null}
+        >
+          <DeliveryChallanPrintView
+            template={template}
+            org={ctx.organization}
+            docNumber={r.doc_number}
+            documentDate={r.document_date}
+            issuedAt={r.issued_at}
+            status={r.status}
+            currency={currency}
+            billTo={billTo}
+            shipTo={shipTo}
+            lines={lines}
+            additionalCharges={additionalCharges}
+            poNo={r.po_no}
+            poDate={r.po_date}
+            lrDocketNo={r.lr_docket_no}
+            ewayBillNo={r.eway_bill_no}
+            transportName={r.transport_name}
+            transporterId={r.transporter_id}
+            vehicleNo={r.vehicle_no}
+            notes={r.notes}
+            poweredBy={powered}
+            logoUrl={logoUrl}
+          />
+        </SalesDocumentScreenPrintPreview>
 
         <div className="mt-6 flex flex-wrap items-center justify-center gap-2 print:hidden">
           <Link

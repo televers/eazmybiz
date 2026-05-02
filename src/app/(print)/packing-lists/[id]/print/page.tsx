@@ -11,6 +11,7 @@ import { canEditIssuedDocument, ISSUED_EDIT_DISABLED_HOVER } from "@/lib/documen
 import { parsePackingListTemplateId } from "@/lib/packing/packing-list-templates";
 import { primaryButtonMd } from "@/lib/ui/primary-button";
 import { IssuePackingListButton } from "@/app/(main)/packing-lists/[id]/ui";
+import { SalesDocumentScreenPrintPreview } from "@/components/documents/sales-document-screen-print-preview";
 
 export default async function PackingListPrintPage({
   params,
@@ -53,22 +54,27 @@ export default async function PackingListPrintPage({
           </Link>
         </div>
 
-        <PackingListPrintView
-          template={template}
-          org={ctx.organization}
-          docNumber={row.doc_number}
-          invoiceNo={row.invoice_no}
-          documentDate={row.document_date}
-          issuedAt={row.issued_at}
-          updatedAt={row.updated_at}
-          status={row.status}
-          billTo={billTo}
-          shipTo={shipTo}
-          packages={packages}
-          notes={row.notes}
-          poweredBy={powered}
-          logoUrl={logoUrl}
-        />
+        <SalesDocumentScreenPrintPreview
+          inlinePdfSrc={row.status === "issued" ? `/api/packing-lists/${id}/pdf?inline=1` : null}
+          downloadPdfHref={row.status === "issued" ? `/api/packing-lists/${id}/pdf` : null}
+        >
+          <PackingListPrintView
+            template={template}
+            org={ctx.organization}
+            docNumber={row.doc_number}
+            invoiceNo={row.invoice_no}
+            documentDate={row.document_date}
+            issuedAt={row.issued_at}
+            updatedAt={row.updated_at}
+            status={row.status}
+            billTo={billTo}
+            shipTo={shipTo}
+            packages={packages}
+            notes={row.notes}
+            poweredBy={powered}
+            logoUrl={logoUrl}
+          />
+        </SalesDocumentScreenPrintPreview>
 
         <div className="mt-6 flex flex-wrap items-center justify-center gap-2 print:hidden">
           {editAllowed ? (

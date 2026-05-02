@@ -12,6 +12,7 @@ import { canEditIssuedDocument, ISSUED_EDIT_DISABLED_HOVER } from "@/lib/documen
 import { primaryButtonMd } from "@/lib/ui/primary-button";
 import { parsePackingListTemplateId } from "@/lib/packing/packing-list-templates";
 import { IssueQuotationButton } from "@/app/(main)/quotations/[id]/ui";
+import { SalesDocumentScreenPrintPreview } from "@/components/documents/sales-document-screen-print-preview";
 
 export default async function QuotationPrintPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -52,30 +53,35 @@ export default async function QuotationPrintPage({ params }: { params: Promise<{
           </Link>
         </div>
 
-        <QuotationPrintView
-          template={template}
-          org={ctx.organization}
-          docNumber={row.doc_number}
-          documentDate={row.document_date}
-          currency={row.currency}
-          billTo={partyFromJson(row.bill_to)}
-          lines={linesFromJson(row.lines)}
-          additionalCharges={additionalChargesFromJson(
-            (row as { additional_charges?: unknown }).additional_charges,
-          )}
-          deliveryPeriod={deliveryPeriod}
-          validUntil={validUntil}
-          paymentTerm={row.payment_term}
-          deliveryIncoTerm={row.delivery_inco_term}
-          termsNotes={row.terms_notes}
-          notes={row.notes}
-          quotationTerms={ctx.organization.quotation_terms ?? null}
-          poweredBy={powered}
-          logoUrl={logoUrl}
-          status={row.status}
-          issuedAt={issuedAt}
-          updatedAt={(row as { updated_at?: string | null }).updated_at ?? null}
-        />
+        <SalesDocumentScreenPrintPreview
+          inlinePdfSrc={row.status === "issued" ? `/api/quotations/${id}/pdf?inline=1` : null}
+          downloadPdfHref={row.status === "issued" ? `/api/quotations/${id}/pdf` : null}
+        >
+          <QuotationPrintView
+            template={template}
+            org={ctx.organization}
+            docNumber={row.doc_number}
+            documentDate={row.document_date}
+            currency={row.currency}
+            billTo={partyFromJson(row.bill_to)}
+            lines={linesFromJson(row.lines)}
+            additionalCharges={additionalChargesFromJson(
+              (row as { additional_charges?: unknown }).additional_charges,
+            )}
+            deliveryPeriod={deliveryPeriod}
+            validUntil={validUntil}
+            paymentTerm={row.payment_term}
+            deliveryIncoTerm={row.delivery_inco_term}
+            termsNotes={row.terms_notes}
+            notes={row.notes}
+            quotationTerms={ctx.organization.quotation_terms ?? null}
+            poweredBy={powered}
+            logoUrl={logoUrl}
+            status={row.status}
+            issuedAt={issuedAt}
+            updatedAt={(row as { updated_at?: string | null }).updated_at ?? null}
+          />
+        </SalesDocumentScreenPrintPreview>
 
         <div className="mt-6 flex flex-wrap items-center justify-center gap-2 print:hidden">
           {editAllowed ? (
