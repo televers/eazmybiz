@@ -1,6 +1,7 @@
 "use client";
 
-import type { EmailOtpType, SupabaseClient } from "@supabase/supabase-js";
+import type { EmailOtpType, Session, SupabaseClient } from "@supabase/supabase-js";
+import { isPasswordRecoverySession, redirectTypeIsPasswordRecovery } from "@/lib/auth/password-recovery-session";
 
 const OTP_TYPES = new Set<EmailOtpType>([
   "signup",
@@ -38,30 +39,36 @@ export async function consumeEmailAuthRedirect(supabase: SupabaseClient): Promis
       data && typeof data === "object" && "redirectType" in data
         ? (data as { redirectType?: string | null }).redirectType
         : null;
+    const session = (data as { session?: Session | null }).session ?? null;
+    const passwordRecovery =
+      redirectTypeIsPasswordRecovery(redirectType) || isPasswordRecoverySession(session);
     window.history.replaceState(null, "", window.location.pathname);
-    return { ok: true, passwordRecovery: redirectType === "PASSWORD_RECOVERY" };
+    return { ok: true, passwordRecovery };
   }
 
   const token_hash = params.get("token_hash");
   const type = parseOtpType(params.get("type"));
   if (token_hash && type) {
-    const { error } = await supabase.auth.verifyOtp({ token_hash, type });
+    const { data, error } = await supabase.auth.verifyOtp({ token_hash, type });
     if (error) return { ok: false, kind: "error" };
+    const passwordRecovery =
+      type === "recovery" || isPasswordRecoverySession(data.session ?? null);
     window.history.replaceState(null, "", window.location.pathname);
-    return { ok: true, passwordRecovery: type === "recovery" };
+    return { ok: true, passwordRecovery };
   }
 
   const hp = new URLSearchParams(window.location.hash.replace(/^#/, ""));
   const access_token = hp.get("access_token");
   const refresh_token = hp.get("refresh_token");
   if (access_token && refresh_token) {
-    const { error } = await supabase.auth.setSession({
+    const { data, error } = await supabase.auth.setSession({
       access_token,
       refresh_token,
     });
     if (error) return { ok: false, kind: "error" };
+    const passwordRecovery = isPasswordRecoverySession(data.session ?? null);
     window.history.replaceState(null, "", window.location.pathname);
-    return { ok: true };
+    return { ok: true, passwordRecovery };
   }
 
   if (params.get("error")) {

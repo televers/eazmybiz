@@ -10,6 +10,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { consumeEmailAuthRedirect } from "@/lib/auth/consume-email-auth-redirect";
+import { isPasswordRecoverySession } from "@/lib/auth/password-recovery-session";
 import { createClient } from "@/lib/supabase/client";
 
 function safeNextPath(raw: string | null): string {
@@ -49,7 +50,8 @@ export default function AuthCallbackPage() {
           data: { session },
         } = await supabase.auth.getSession();
         if (session) {
-          router.replace(next);
+          const dest = isPasswordRecoverySession(session) ? "/reset-password" : next;
+          router.replace(dest);
           router.refresh();
           return;
         }
