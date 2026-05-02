@@ -18,7 +18,7 @@ function parseOtpType(s: string | null): EmailOtpType | null {
 }
 
 export type ConsumeEmailAuthRedirectResult =
-  | { ok: true }
+  | { ok: true; passwordRecovery?: boolean }
   | { ok: false; kind: "no_tokens" }
   | { ok: false; kind: "error" };
 
@@ -32,10 +32,14 @@ export async function consumeEmailAuthRedirect(supabase: SupabaseClient): Promis
 
   const code = params.get("code");
   if (code) {
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) return { ok: false, kind: "error" };
+    const redirectType =
+      data && typeof data === "object" && "redirectType" in data
+        ? (data as { redirectType?: string | null }).redirectType
+        : null;
     window.history.replaceState(null, "", window.location.pathname);
-    return { ok: true };
+    return { ok: true, passwordRecovery: redirectType === "PASSWORD_RECOVERY" };
   }
 
   const token_hash = params.get("token_hash");
@@ -44,7 +48,7 @@ export async function consumeEmailAuthRedirect(supabase: SupabaseClient): Promis
     const { error } = await supabase.auth.verifyOtp({ token_hash, type });
     if (error) return { ok: false, kind: "error" };
     window.history.replaceState(null, "", window.location.pathname);
-    return { ok: true };
+    return { ok: true, passwordRecovery: type === "recovery" };
   }
 
   const hp = new URLSearchParams(window.location.hash.replace(/^#/, ""));

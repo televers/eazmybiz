@@ -38,7 +38,8 @@ export default function AuthCallbackPage() {
       if (cancelled) return;
 
       if (result.ok) {
-        router.replace(next);
+        const dest = result.passwordRecovery ? "/reset-password" : next;
+        router.replace(dest);
         router.refresh();
         return;
       }

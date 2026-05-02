@@ -27,6 +27,20 @@ function isProtectedPath(pathname: string) {
 }
 
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  /**
+   * Supabase often redirects PKCE links to **Site URL** only (e.g. /?code=...).
+   * Forward to /auth/callback so the client can exchange the code (recovery, invite, OAuth).
+   */
+  if (
+    pathname === "/" &&
+    (request.nextUrl.searchParams.has("code") || request.nextUrl.searchParams.has("token_hash"))
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/auth/callback";
+    return NextResponse.redirect(url);
+  }
+
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -60,8 +74,6 @@ export async function middleware(request: NextRequest) {
   } catch (e) {
     console.error("[middleware] Supabase auth getUser failed (network or Edge fetch):", e);
   }
-
-  const { pathname } = request.nextUrl;
 
   if (user && mustSetPasswordFromInvite(user)) {
     const allowed =
