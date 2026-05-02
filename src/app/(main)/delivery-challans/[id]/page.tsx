@@ -79,21 +79,24 @@ export default async function DeliveryChallanDetailPage({
             <h1 className="text-2xl font-semibold">{r.doc_number}</h1>
             <p className="mt-1 text-sm capitalize text-[var(--muted)]">Status: {r.status}</p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex w-full max-w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
             <Link
               href={`/delivery-challans/${id}/edit`}
-              className="rounded-md border border-[var(--border)] px-4 py-2 text-sm hover:bg-[var(--border)]"
+              className="inline-flex min-h-11 w-full items-center justify-center rounded-md border border-[var(--border)] px-4 py-2 text-sm hover:bg-[var(--border)] sm:w-auto"
             >
               Edit
             </Link>
             <Link
               href={`/delivery-challans/${id}/print`}
-              className="rounded-md border border-[var(--border)] px-4 py-2 text-sm hover:bg-[var(--border)]"
+              className="inline-flex min-h-11 w-full items-center justify-center rounded-md border border-[var(--border)] px-4 py-2 text-sm hover:bg-[var(--border)] sm:w-auto"
             >
               Print view
             </Link>
             {r.status === "issued" ? (
-              <a href={`/api/delivery-challans/${id}/pdf`} className={primaryButtonMd}>
+              <a
+                href={`/api/delivery-challans/${id}/pdf`}
+                className={primaryButtonMd + " inline-flex min-h-11 w-full items-center justify-center sm:w-auto"}
+              >
                 Download PDF
               </a>
             ) : null}
@@ -139,7 +142,9 @@ export default async function DeliveryChallanDetailPage({
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-[var(--border)]">
+      <div className="space-y-1">
+        <p className="text-xs text-[var(--muted)] lg:hidden">Swipe sideways to see all columns.</p>
+        <div className="-mx-1 overflow-x-auto overscroll-x-contain rounded-lg border border-[var(--border)] pb-1 touch-pan-x [-webkit-overflow-scrolling:touch] sm:mx-0 lg:touch-auto">
         <table className="w-full min-w-[720px] text-left text-sm">
           <thead className="bg-[var(--card)] text-[var(--muted)]">
             <tr>
@@ -174,6 +179,7 @@ export default async function DeliveryChallanDetailPage({
             ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 text-sm">

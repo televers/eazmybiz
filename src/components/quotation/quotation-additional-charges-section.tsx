@@ -95,9 +95,9 @@ function QuotationAdditionalChargesSectionInner({
       {drafts.map((row, idx) => (
           <div
             key={idx}
-            className="flex flex-wrap items-end gap-3 rounded-md border border-[var(--border)] bg-[var(--card)] p-3"
+            className="flex flex-col gap-3 rounded-md border border-[var(--border)] bg-[var(--card)] p-3 sm:flex-row sm:flex-wrap sm:items-end"
           >
-            <div className="flex min-w-[200px] flex-1 flex-col gap-1 text-sm">
+            <div className="flex min-w-0 flex-1 flex-col gap-1 text-sm sm:min-w-[200px]">
               <span className="text-[var(--muted)]">Charge type</span>
               <select
                 className={field}
@@ -147,7 +147,7 @@ function QuotationAdditionalChargesSectionInner({
                 />
               ) : null}
             </div>
-            <label className="flex w-32 flex-col gap-1 text-sm">
+            <label className="flex w-full min-w-0 flex-col gap-1 text-sm sm:w-32">
               <span className="text-[var(--muted)]">Amount</span>
               <input
                 type="text"
@@ -175,7 +175,7 @@ function QuotationAdditionalChargesSectionInner({
                 placeholder="0"
               />
             </label>
-            <label className="flex w-28 flex-col gap-1 text-sm">
+            <label className="flex w-full min-w-0 flex-col gap-1 text-sm sm:w-28">
               <span className="text-[var(--muted)]">Tax %</span>
               <input
                 type="text"

@@ -76,31 +76,31 @@ export default async function PackingListDetailPage({
               </div>
             </dl>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex w-full max-w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
             {row.status === "issued" ? (
               <a
                 href={`/api/packing-lists/${id}/pdf`}
-                className={primaryButtonMd}
+                className={primaryButtonMd + " inline-flex min-h-11 w-full items-center justify-center sm:w-auto"}
               >
                 Download PDF
               </a>
             ) : null}
             <Link
               href={`/packing-lists/${id}/print`}
-              className="rounded-md border border-[var(--border)] px-4 py-2 text-sm hover:bg-[var(--border)]"
+              className="inline-flex min-h-11 w-full items-center justify-center rounded-md border border-[var(--border)] px-4 py-2 text-sm hover:bg-[var(--border)] sm:w-auto"
             >
               Print preview
             </Link>
             {editAllowed ? (
               <Link
                 href={`/packing-lists/${id}/edit`}
-                className="rounded-md border border-[var(--border)] px-4 py-2 text-sm hover:bg-[var(--border)]"
+                className="inline-flex min-h-11 w-full items-center justify-center rounded-md border border-[var(--border)] px-4 py-2 text-sm hover:bg-[var(--border)] sm:w-auto"
               >
                 Edit
               </Link>
             ) : (
               <span
-                className="cursor-not-allowed rounded-md border border-[var(--border)] px-4 py-2 text-sm text-[var(--muted)] opacity-60"
+                className="inline-flex min-h-11 w-full cursor-not-allowed items-center justify-center rounded-md border border-[var(--border)] px-4 py-2 text-sm text-[var(--muted)] opacity-60 sm:w-auto"
                 title={ISSUED_EDIT_DISABLED_HOVER}
               >
                 Edit
@@ -137,14 +137,15 @@ export default async function PackingListDetailPage({
         </h2>
         <div className="mt-2 space-y-4">
           {packages.map((pkg) => (
-            <div key={pkg.package_no} className="rounded-lg border border-[var(--border)] overflow-hidden">
+            <div key={pkg.package_no} className="overflow-hidden rounded-lg border border-[var(--border)]">
               <div className="bg-[var(--card)] px-4 py-2 text-sm font-medium">
                 Package {pkg.package_no}
                 {pkg.package_type ? ` · ${pkg.package_type}` : ""}
                 {pkg.package_size?.trim() ? ` · ${formatPackageSizeCm(pkg.package_size)}` : ""}
                 {pkg.package_weight_kg != null ? ` · ${formatGrossWeightKg(pkg.package_weight_kg)}` : ""}
               </div>
-              <table className="w-full text-left text-sm">
+              <div className="-mx-1 overflow-x-auto overscroll-x-contain pb-1 touch-pan-x [-webkit-overflow-scrolling:touch] sm:mx-0">
+                <table className="w-full min-w-[320px] text-left text-sm">
                 <thead className="text-[var(--muted)]">
                   <tr>
                     <th className="px-4 py-2">Description</th>
@@ -161,7 +162,8 @@ export default async function PackingListDetailPage({
                     </tr>
                   ))}
                 </tbody>
-              </table>
+                </table>
+              </div>
               {pkg.packing_remarks ? (
                 <div className="border-t border-[var(--border)] px-4 py-2 text-xs text-[var(--muted)]">
                   Remarks: {pkg.packing_remarks}

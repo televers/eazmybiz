@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { resolvePartyShipAddressId } from "@/lib/parties/resolve-ship-address-id";
@@ -606,7 +607,7 @@ export function DeliveryChallanEditor({
           This delivery challan is issued. Saving updates the document and print view.
         </p>
       ) : null}
-      <div className="flex flex-wrap items-end gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:flex xl:flex-wrap xl:items-end">
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-[var(--muted)]">Document date</span>
           <input
@@ -616,7 +617,7 @@ export function DeliveryChallanEditor({
             max={documentDateMaxYmd.slice(0, 10)}
             value={documentDate}
             onChange={(e) => setDocumentDate(e.target.value)}
-            className="rounded-md border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-sm"
+            className="w-full max-w-full rounded-md border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-sm sm:max-w-[200px]"
           />
         </label>
         {numberingUi ? (
@@ -632,7 +633,7 @@ export function DeliveryChallanEditor({
           <select
             value={currency}
             onChange={(e) => setCurrency(e.target.value)}
-            className={field + " max-w-[200px]"}
+            className={field + " w-full max-w-full sm:max-w-[200px]"}
           >
             {CURRENCY_OPTIONS.map((c) => (
               <option key={c} value={c}>
@@ -647,7 +648,7 @@ export function DeliveryChallanEditor({
             disabled={!canPickTemplate}
             value={template}
             onChange={(e) => setTemplate(e.target.value as PackingListTemplateId)}
-            className={field + " max-w-[280px] disabled:opacity-60"}
+            className={field + " w-full max-w-full sm:max-w-[280px] disabled:opacity-60"}
           >
             {templateOptions.map((o) => (
               <option key={o.id} value={o.id}>
@@ -865,7 +866,8 @@ export function DeliveryChallanEditor({
         <p className="text-xs text-[var(--muted)]">
           <strong>HSN/SAC</strong> is optional per line. Unit rate, tax, and totals follow the same rules as quotations.
         </p>
-        <div className="overflow-x-auto rounded-lg border border-[var(--border)]">
+        <p className="text-xs text-[var(--muted)] lg:hidden">Swipe sideways to see all columns.</p>
+        <div className="-mx-1 overflow-x-auto overscroll-x-contain rounded-lg border border-[var(--border)] pb-1 touch-pan-x [-webkit-overflow-scrolling:touch] sm:mx-0 lg:touch-auto">
           <table className="w-full min-w-[960px] border-collapse text-left text-sm">
             <thead className="bg-[var(--card)] text-[var(--muted)]">
               <tr>
@@ -1219,7 +1221,7 @@ export function DeliveryChallanEditor({
                       <button
                         type="button"
                         onClick={() => removeLine(i)}
-                        className="text-xs text-red-600 hover:underline"
+                        className="min-h-10 min-w-[3.25rem] px-2 text-sm text-red-600 hover:underline touch-manipulation"
                       >
                         Remove
                       </button>
@@ -1232,7 +1234,11 @@ export function DeliveryChallanEditor({
           </table>
         </div>
 
-        <button type="button" onClick={addLine} className="text-sm text-sky-600 hover:underline">
+        <button
+          type="button"
+          onClick={addLine}
+          className="flex min-h-11 items-center text-sm text-sky-600 hover:underline touch-manipulation"
+        >
           + Add line
         </button>
 
@@ -1256,13 +1262,21 @@ export function DeliveryChallanEditor({
 
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
-      <button
-        type="submit"
-        disabled={loading}
-        className={primaryButtonMd}
-      >
-        {loading ? "Saving…" : mode === "create" ? "Save draft" : "Save"}
-      </button>
+      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+        <Link
+          href={mode === "edit" && challanId ? `/delivery-challans/${challanId}` : "/delivery-challans"}
+          className="flex min-h-11 items-center justify-center rounded-md border border-[var(--border)] px-4 py-2 text-sm hover:bg-[var(--border)] sm:min-h-0"
+        >
+          Cancel
+        </Link>
+        <button
+          type="submit"
+          disabled={loading}
+          className={primaryButtonMd + " min-h-11 w-full justify-center sm:min-h-0 sm:w-auto"}
+        >
+          {loading ? "Saving…" : mode === "create" ? "Save draft" : "Save"}
+        </button>
+      </div>
     </form>
   );
 }

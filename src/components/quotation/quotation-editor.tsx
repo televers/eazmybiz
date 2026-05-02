@@ -664,7 +664,7 @@ export function QuotationEditor({
 
   return (
     <form onSubmit={onSubmit} className="space-y-8">
-      <div className="flex flex-wrap items-end gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:flex xl:flex-wrap xl:items-end">
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-[var(--muted)]">Quotation date</span>
           <input
@@ -683,7 +683,7 @@ export function QuotationEditor({
                 return prev;
               });
             }}
-            className={field + " max-w-[200px]"}
+            className={field + " w-full max-w-full sm:max-w-[200px]"}
           />
         </label>
         {numberingUi ? (
@@ -699,7 +699,7 @@ export function QuotationEditor({
           <select
             value={currency}
             onChange={(e) => setCurrency(e.target.value)}
-            className={field + " max-w-[200px]"}
+            className={field + " w-full max-w-full sm:max-w-[200px]"}
           >
             {CURRENCY_OPTIONS.map((c) => (
               <option key={c} value={c}>
@@ -714,7 +714,7 @@ export function QuotationEditor({
             disabled={!canPickTemplate}
             value={template}
             onChange={(e) => setTemplate(e.target.value as PackingListTemplateId)}
-            className={field + " max-w-[280px] disabled:opacity-60"}
+            className={field + " w-full max-w-full sm:max-w-[280px] disabled:opacity-60"}
           >
             {templateOptions.map((o) => (
               <option key={o.id} value={o.id}>
@@ -788,7 +788,8 @@ export function QuotationEditor({
 
       <div className="space-y-3">
         <h3 className="text-sm font-semibold">Line items</h3>
-        <div className="overflow-x-auto">
+        <p className="text-xs text-[var(--muted)] lg:hidden">Swipe sideways to see all columns.</p>
+        <div className="-mx-1 overflow-x-auto overscroll-x-contain pb-1 touch-pan-x [-webkit-overflow-scrolling:touch] sm:mx-0 lg:touch-auto">
           <table className="w-full min-w-[960px] border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-[var(--border)] text-[var(--muted)]">
@@ -1149,7 +1150,11 @@ export function QuotationEditor({
                   <td className="py-2 pr-2 align-top text-right font-medium tabular-nums">{line.line_total.toFixed(2)}</td>
                   <td className="py-2 align-top text-right">
                     {lines.length > 1 ? (
-                      <button type="button" className="text-xs text-red-600 hover:underline" onClick={() => removeLine(i)}>
+                      <button
+                        type="button"
+                        className="min-h-10 min-w-[3.25rem] px-2 text-sm text-red-600 hover:underline touch-manipulation"
+                        onClick={() => removeLine(i)}
+                      >
                         Remove
                       </button>
                     ) : null}
@@ -1160,7 +1165,11 @@ export function QuotationEditor({
             </tbody>
           </table>
         </div>
-        <button type="button" onClick={addLine} className="text-sm text-sky-600 hover:underline">
+        <button
+          type="button"
+          onClick={addLine}
+          className="flex min-h-11 items-center text-sm text-sky-600 hover:underline touch-manipulation"
+        >
           + Add line
         </button>
 
@@ -1290,7 +1299,7 @@ export function QuotationEditor({
               validUntilTouchedRef.current = true;
               setValidUntil(e.target.value);
             }}
-            className={field + " max-w-[200px]"}
+            className={field + " w-full max-w-full sm:max-w-[200px]"}
           />
           <span className="text-xs text-[var(--muted)]">
             Defaults to 7 days after the quotation date or 7 days from today (organization calendar), whichever is later.
@@ -1311,20 +1320,20 @@ export function QuotationEditor({
 
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
-      <div className="flex flex-wrap gap-3">
-        <button
-          type="submit"
-          disabled={loading}
-          className={primaryButtonMd}
-        >
-          {loading ? "Saving…" : mode === "create" ? "Create draft" : "Save"}
-        </button>
+      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:flex-wrap sm:items-center">
         <Link
           href={mode === "edit" && quotationId ? `/quotations/${quotationId}` : "/quotations"}
-          className="rounded-md border border-[var(--border)] px-4 py-2 text-sm hover:bg-[var(--border)]"
+          className="flex min-h-11 items-center justify-center rounded-md border border-[var(--border)] px-4 py-2 text-sm hover:bg-[var(--border)] sm:min-h-0"
         >
           Cancel
         </Link>
+        <button
+          type="submit"
+          disabled={loading}
+          className={primaryButtonMd + " min-h-11 w-full justify-center sm:min-h-0 sm:w-auto"}
+        >
+          {loading ? "Saving…" : mode === "create" ? "Create draft" : "Save"}
+        </button>
       </div>
     </form>
   );

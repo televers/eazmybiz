@@ -439,7 +439,7 @@ export function PackingListEditor({
 
   return (
     <form onSubmit={onSubmit} className="space-y-8">
-      <div className="flex flex-wrap items-end gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:flex xl:flex-wrap xl:items-end">
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-[var(--muted)]">Document date</span>
           <input
@@ -645,12 +645,12 @@ export function PackingListEditor({
       </div>
 
       <div className="space-y-6">
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h3 className="text-sm font-semibold">Packages &amp; lines</h3>
           <button
             type="button"
             onClick={addPackage}
-            className="rounded-md border border-[var(--border)] px-3 py-1.5 text-sm hover:bg-[var(--border)]"
+            className="min-h-11 shrink-0 rounded-md border border-[var(--border)] px-3 py-2 text-sm hover:bg-[var(--border)] touch-manipulation sm:min-h-0 sm:py-1.5"
           >
             Add package
           </button>
@@ -664,7 +664,7 @@ export function PackingListEditor({
                 <button
                   type="button"
                   onClick={() => removePackage(pi)}
-                  className="text-sm text-red-600 hover:underline"
+                  className="min-h-10 text-sm text-red-600 hover:underline touch-manipulation"
                 >
                   Remove package
                 </button>
@@ -760,7 +760,8 @@ export function PackingListEditor({
               </div>
             </div>
 
-            <div className="overflow-x-auto">
+            <p className="text-xs text-[var(--muted)] lg:hidden">Swipe sideways for all line columns.</p>
+            <div className="-mx-1 overflow-x-auto overscroll-x-contain pb-1 touch-pan-x [-webkit-overflow-scrolling:touch] sm:mx-0 lg:touch-auto">
               <table className="w-full min-w-[560px] text-left text-sm">
                 <thead>
                   <tr className="border-b border-[var(--border)] text-[var(--muted)]">
@@ -908,7 +909,7 @@ export function PackingListEditor({
                           {pkg.lines.length > 1 ? (
                             <button
                               type="button"
-                              className="text-xs text-red-600 hover:underline"
+                              className="min-h-10 min-w-[3.25rem] px-2 text-sm text-red-600 hover:underline touch-manipulation"
                               onClick={() => removeLine(pi, li)}
                             >
                               Remove
@@ -924,7 +925,7 @@ export function PackingListEditor({
             <button
               type="button"
               onClick={() => addLine(pi)}
-              className="text-sm text-sky-600 hover:underline"
+              className="flex min-h-11 items-center text-sm text-sky-600 hover:underline touch-manipulation"
             >
               + Add line in this package
             </button>
@@ -944,11 +945,17 @@ export function PackingListEditor({
 
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+        <Link
+          href={mode === "edit" && packingListId ? `/packing-lists/${packingListId}` : "/packing-lists"}
+          className="flex min-h-11 items-center justify-center rounded-md border border-[var(--border)] px-4 py-2 text-sm hover:bg-[var(--border)] sm:min-h-0"
+        >
+          Cancel
+        </Link>
         <button
           type="submit"
           disabled={loading}
-          className={primaryButtonMd}
+          className={primaryButtonMd + " min-h-11 w-full justify-center sm:min-h-0 sm:w-auto"}
         >
           {loading
             ? "Saving…"
@@ -958,12 +965,6 @@ export function PackingListEditor({
                 ? "Save changes"
                 : "Save draft"}
         </button>
-        <Link
-          href={mode === "edit" && packingListId ? `/packing-lists/${packingListId}` : "/packing-lists"}
-          className="rounded-md border border-[var(--border)] px-4 py-2 text-sm hover:bg-[var(--border)]"
-        >
-          Cancel
-        </Link>
       </div>
     </form>
   );

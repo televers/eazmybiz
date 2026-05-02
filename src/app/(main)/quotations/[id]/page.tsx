@@ -72,31 +72,31 @@ export default async function QuotationDetailPage({ params }: { params: Promise<
               </div>
             </dl>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex w-full max-w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
             {row.status === "issued" ? (
               <a
                 href={`/api/quotations/${id}/pdf`}
-                className={primaryButtonMd}
+                className={primaryButtonMd + " inline-flex min-h-11 w-full items-center justify-center sm:w-auto"}
               >
                 Download PDF
               </a>
             ) : null}
             <Link
               href={`/quotations/${id}/print`}
-              className="rounded-md border border-[var(--border)] px-4 py-2 text-sm hover:bg-[var(--border)]"
+              className="inline-flex min-h-11 w-full items-center justify-center rounded-md border border-[var(--border)] px-4 py-2 text-sm hover:bg-[var(--border)] sm:w-auto"
             >
               Print preview
             </Link>
             {editAllowed ? (
               <Link
                 href={`/quotations/${id}/edit`}
-                className="rounded-md border border-[var(--border)] px-4 py-2 text-sm hover:bg-[var(--border)]"
+                className="inline-flex min-h-11 w-full items-center justify-center rounded-md border border-[var(--border)] px-4 py-2 text-sm hover:bg-[var(--border)] sm:w-auto"
               >
                 Edit
               </Link>
             ) : (
               <span
-                className="cursor-not-allowed rounded-md border border-[var(--border)] px-4 py-2 text-sm text-[var(--muted)] opacity-60"
+                className="inline-flex min-h-11 w-full cursor-not-allowed items-center justify-center rounded-md border border-[var(--border)] px-4 py-2 text-sm text-[var(--muted)] opacity-60 sm:w-auto"
                 title={ISSUED_EDIT_DISABLED_HOVER}
               >
                 Edit
@@ -119,7 +119,8 @@ export default async function QuotationDetailPage({ params }: { params: Promise<
 
       <div>
         <h2 className="text-sm font-medium text-[var(--muted)]">Line items</h2>
-        <div className="mt-2 overflow-x-auto rounded-lg border border-[var(--border)]">
+        <p className="mt-1 text-xs text-[var(--muted)] lg:hidden">Swipe sideways to see all columns.</p>
+        <div className="-mx-1 mt-2 overflow-x-auto overscroll-x-contain rounded-lg border border-[var(--border)] pb-1 touch-pan-x [-webkit-overflow-scrolling:touch] sm:mx-0 lg:touch-auto">
           <table className="w-full min-w-[960px] text-left text-sm">
             <thead className="bg-[var(--card)] text-[var(--muted)]">
               <tr>

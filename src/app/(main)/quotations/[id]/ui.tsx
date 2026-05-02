@@ -39,16 +39,18 @@ export function IssueQuotationButton({ id }: { id: string }) {
   }
 
   return (
-    <div className="flex flex-col items-end gap-1">
+    <div className="flex w-full flex-col gap-1 sm:w-auto sm:items-end">
       <button
         type="button"
         onClick={onClick}
         disabled={loading}
-        className={primaryButtonMd}
+        className={primaryButtonMd + " min-h-11 w-full justify-center touch-manipulation sm:w-auto"}
       >
         {loading ? "Issuing…" : "Issue"}
       </button>
-      {error ? <p className="max-w-xs text-right text-xs text-red-600">{error}</p> : null}
+      {error ? (
+        <p className="w-full max-w-xs text-center text-xs text-red-600 sm:text-right">{error}</p>
+      ) : null}
     </div>
   );
 }

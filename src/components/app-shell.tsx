@@ -221,6 +221,22 @@ function IconChevron({ open }: { open: boolean }) {
   );
 }
 
+function IconMenuHamburger() {
+  return (
+    <svg className="h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7h16M4 12h16M4 17h16" />
+    </svg>
+  );
+}
+
+function IconClose() {
+  return (
+    <svg className="h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18 18 6M6 6l12 12" />
+    </svg>
+  );
+}
+
 const navItems: NavItem[] = [
   { href: "/dashboard", label: "Home", icon: <IconHome />, feature: null },
   { href: "/parties", label: "Parties", icon: <IconUsers />, feature: "parties" },
@@ -257,6 +273,97 @@ function isBrowsePath(pathname: string | null): boolean {
   return pathname === "/parties" || pathname.startsWith("/parties/") || pathname === "/items" || pathname.startsWith("/items/");
 }
 
+function navLinkClass(active: boolean, expanded: boolean, mobile: boolean): string {
+  const size = mobile
+    ? "min-h-11 touch-manipulation px-3 py-3 text-base active:bg-[var(--border)] "
+    : expanded
+      ? "px-3 py-2 text-sm "
+      : "justify-center px-0 py-2 text-sm ";
+  const tone = active
+    ? "bg-sky-600/15 font-medium text-sky-800 dark:text-sky-200 "
+    : "text-[var(--foreground)] hover:bg-[var(--border)] ";
+  return "flex items-center gap-3 rounded-md transition-colors " + size + tone;
+}
+
+function MainNavLinks({
+  pathname,
+  expanded,
+  hydrated,
+  mobile,
+  onNavigate,
+  featurePermissions,
+  canManageMemberships,
+  canAccessPricing,
+  isMasterAdmin,
+}: {
+  pathname: string;
+  expanded: boolean;
+  hydrated: boolean;
+  mobile: boolean;
+  onNavigate?: () => void;
+  featurePermissions: FeaturePermissionMap;
+  canManageMemberships: boolean;
+  canAccessPricing: boolean;
+  isMasterAdmin: boolean;
+}) {
+  const p = pathname ?? "";
+  return (
+    <>
+      {navItems.map((item) => {
+        if (item.requiresManageMemberships && !canManageMemberships) return null;
+        if (item.requiresPricingAccess && !canAccessPricing) return null;
+        if (item.feature && !featurePermissions[item.feature]) return null;
+        const active = navActive(p, item.href);
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            title={mobile || !hydrated || expanded ? undefined : item.label}
+            onClick={onNavigate}
+            className={navLinkClass(active, mobile ? true : expanded, mobile)}
+          >
+            {item.icon}
+            {mobile || expanded ? <span className="truncate">{item.label}</span> : null}
+          </Link>
+        );
+      })}
+      {canManageMemberships ? (
+        <Link
+          href="/settings/team"
+          title={mobile || !hydrated || expanded ? undefined : "Team & access"}
+          onClick={onNavigate}
+          className={navLinkClass(navActive(p, "/settings/team"), mobile ? true : expanded, mobile)}
+        >
+          <IconUsers />
+          {mobile || expanded ? <span className="truncate">Team &amp; access</span> : null}
+        </Link>
+      ) : null}
+      {canManageMemberships ? (
+        <Link
+          href="/settings/notifications"
+          title={mobile || !hydrated || expanded ? undefined : "Notifications"}
+          onClick={onNavigate}
+          className={navLinkClass(navActive(p, "/settings/notifications"), mobile ? true : expanded, mobile)}
+        >
+          <IconBellNav />
+          {mobile || expanded ? <span className="truncate">Notifications</span> : null}
+        </Link>
+      ) : null}
+      {isMasterAdmin ? (
+        <Link
+          href="/settings/account"
+          title={mobile || !hydrated || expanded ? undefined : "Account"}
+          onClick={onNavigate}
+          className={navLinkClass(navActive(p, "/settings/account"), mobile ? true : expanded, mobile)}
+        >
+          <IconAccount />
+          {mobile || expanded ? <span className="truncate">Account</span> : null}
+        </Link>
+      ) : null}
+    </>
+  );
+}
+
 export function AppShell({
   orgName,
   children,
@@ -285,6 +392,7 @@ export function AppShell({
 
   const [expanded, setExpanded] = useState(true);
   const [hydrated, setHydrated] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
     try {
@@ -296,6 +404,30 @@ export function AppShell({
     }
     setHydrated(true);
   }, []);
+
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!mobileNavOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileNavOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [mobileNavOpen]);
+
+  useEffect(() => {
+    if (mobileNavOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileNavOpen]);
 
   const toggleSidebar = useCallback(() => {
     setExpanded((e) => {
@@ -312,10 +444,10 @@ export function AppShell({
   const railWidth = expanded ? "w-52" : "w-[4.25rem]";
 
   return (
-    <div className="flex min-h-screen bg-[var(--background)] text-[var(--foreground)]">
+    <div className="flex min-h-screen min-h-dvh bg-[var(--background)] text-[var(--foreground)]">
       <aside
         className={
-          "flex shrink-0 flex-col border-r border-[var(--border)] bg-[var(--card)] transition-[width] duration-200 ease-out " +
+          "hidden shrink-0 flex-col border-r border-[var(--border)] bg-[var(--card)] transition-[width] duration-200 ease-out lg:flex " +
           railWidth
         }
       >
@@ -356,83 +488,16 @@ export function AppShell({
         </div>
 
         <nav className="flex-1 space-y-0.5 overflow-y-auto p-2" aria-label="Main">
-          {navItems.map((item) => {
-            if (item.requiresManageMemberships && !canManageMemberships) {
-              return null;
-            }
-            if (item.requiresPricingAccess && !canAccessPricing) {
-              return null;
-            }
-            if (item.feature && !featurePermissions[item.feature]) {
-              return null;
-            }
-            const active = navActive(pathname ?? "", item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                title={!hydrated || expanded ? undefined : item.label}
-                className={
-                  "flex items-center gap-3 rounded-md py-2 text-sm transition-colors " +
-                  (expanded ? "px-3" : "justify-center px-0") +
-                  (active
-                    ? " bg-sky-600/15 font-medium text-sky-800 dark:text-sky-200"
-                    : " text-[var(--foreground)] hover:bg-[var(--border)]")
-                }
-              >
-                {item.icon}
-                {expanded ? <span className="truncate">{item.label}</span> : null}
-              </Link>
-            );
-          })}
-          {canManageMemberships ? (
-            <Link
-              href="/settings/team"
-              title={!hydrated || expanded ? undefined : "Team & access"}
-              className={
-                "flex items-center gap-3 rounded-md py-2 text-sm transition-colors " +
-                (expanded ? "px-3" : "justify-center px-0") +
-                (navActive(pathname ?? "", "/settings/team")
-                  ? " bg-sky-600/15 font-medium text-sky-800 dark:text-sky-200"
-                  : " text-[var(--foreground)] hover:bg-[var(--border)]")
-              }
-            >
-              <IconUsers />
-              {expanded ? <span className="truncate">Team &amp; access</span> : null}
-            </Link>
-          ) : null}
-          {canManageMemberships ? (
-            <Link
-              href="/settings/notifications"
-              title={!hydrated || expanded ? undefined : "Notifications"}
-              className={
-                "flex items-center gap-3 rounded-md py-2 text-sm transition-colors " +
-                (expanded ? "px-3" : "justify-center px-0") +
-                (navActive(pathname ?? "", "/settings/notifications")
-                  ? " bg-sky-600/15 font-medium text-sky-800 dark:text-sky-200"
-                  : " text-[var(--foreground)] hover:bg-[var(--border)]")
-              }
-            >
-              <IconBellNav />
-              {expanded ? <span className="truncate">Notifications</span> : null}
-            </Link>
-          ) : null}
-          {isMasterAdmin ? (
-            <Link
-              href="/settings/account"
-              title={!hydrated || expanded ? undefined : "Account"}
-              className={
-                "flex items-center gap-3 rounded-md py-2 text-sm transition-colors " +
-                (expanded ? "px-3" : "justify-center px-0") +
-                (navActive(pathname ?? "", "/settings/account")
-                  ? " bg-sky-600/15 font-medium text-sky-800 dark:text-sky-200"
-                  : " text-[var(--foreground)] hover:bg-[var(--border)]")
-              }
-            >
-              <IconAccount />
-              {expanded ? <span className="truncate">Account</span> : null}
-            </Link>
-          ) : null}
+          <MainNavLinks
+            pathname={pathname ?? ""}
+            expanded={expanded}
+            hydrated={hydrated}
+            mobile={false}
+            featurePermissions={featurePermissions}
+            canManageMemberships={canManageMemberships}
+            canAccessPricing={canAccessPricing}
+            isMasterAdmin={isMasterAdmin}
+          />
         </nav>
 
         <div className={"mt-auto space-y-2 border-t border-[var(--border)] p-2 " + (expanded ? "" : "flex flex-col items-center")}>
@@ -453,16 +518,112 @@ export function AppShell({
         </div>
       </aside>
 
+      {mobileNavOpen ? (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/45"
+            aria-label="Close menu"
+            onClick={() => setMobileNavOpen(false)}
+          />
+          <div
+            id="app-mobile-nav"
+            className="absolute inset-y-0 left-0 flex w-[min(20.5rem,92vw)] max-w-full flex-col border-r border-[var(--border)] bg-[var(--card)] shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="app-mobile-nav-title"
+          >
+            <div
+              className="flex shrink-0 items-center justify-between gap-2 border-b border-[var(--border)] p-3"
+              style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}
+            >
+              <span id="app-mobile-nav-title" className="text-sm font-semibold text-[var(--foreground)]">
+                Menu
+              </span>
+              <button
+                type="button"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-[var(--foreground)] hover:bg-[var(--border)]"
+                onClick={() => setMobileNavOpen(false)}
+                aria-label="Close menu"
+              >
+                <IconClose />
+              </button>
+            </div>
+            <nav className="flex-1 space-y-0.5 overflow-y-auto overscroll-y-contain p-2" aria-label="Main">
+              <MainNavLinks
+                pathname={pathname ?? ""}
+                expanded={true}
+                hydrated={hydrated}
+                mobile={true}
+                onNavigate={() => setMobileNavOpen(false)}
+                featurePermissions={featurePermissions}
+                canManageMemberships={canManageMemberships}
+                canAccessPricing={canAccessPricing}
+                isMasterAdmin={isMasterAdmin}
+              />
+            </nav>
+            <div
+              className="mt-auto space-y-2 border-t border-[var(--border)] p-2"
+              style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}
+            >
+              <OrgSwitcher organizations={accessibleOrganizations} activeOrgId={activeOrgId} expanded={true} />
+              <div className="truncate px-2 text-xs text-[var(--muted)]" title={orgName}>
+                {orgName}
+              </div>
+              <ShareEazmybizSidebar expanded={true} hydrated={hydrated} />
+              <SignOutButton className="min-h-11 w-full text-center text-[var(--foreground)]" />
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <div className="flex min-w-0 flex-1 flex-col">
+        <header
+          className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-2 border-b border-[var(--border)] bg-[var(--card)] px-2 lg:hidden"
+          style={{ paddingTop: "max(0px, env(safe-area-inset-top))" }}
+        >
+          <button
+            type="button"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-[var(--foreground)] hover:bg-[var(--border)] active:bg-[var(--border)]"
+            aria-expanded={mobileNavOpen}
+            aria-controls="app-mobile-nav"
+            onClick={() => setMobileNavOpen(true)}
+            aria-label="Open menu"
+          >
+            <IconMenuHamburger />
+          </button>
+          <Link
+            href="/dashboard"
+            className="flex min-w-0 flex-1 items-center gap-2 rounded-md py-2 font-semibold"
+            aria-label="eazmybiz home"
+          >
+            <span className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-white dark:bg-white">
+              <Image
+                src="/brand/infinity-mark.png"
+                alt=""
+                width={32}
+                height={32}
+                className="h-8 w-8 object-contain"
+                priority
+              />
+            </span>
+            <span className="truncate text-[#007BFF] dark:text-[#007BFF]">eazmybiz</span>
+          </Link>
+          {canManageMemberships && notificationPreview ? (
+            <div className="shrink-0 pr-1">
+              <NotificationsBell preview={notificationPreview} isAccountOwner={isAccountOwner} />
+            </div>
+          ) : null}
+        </header>
         {canManageMemberships && notificationPreview ? (
-          <div className="flex shrink-0 justify-end border-b border-[var(--border)] bg-[var(--background)] px-3 py-2">
+          <div className="hidden shrink-0 justify-end border-b border-[var(--border)] bg-[var(--background)] px-3 py-2 lg:flex">
             <NotificationsBell preview={notificationPreview} isAccountOwner={isAccountOwner} />
           </div>
         ) : null}
         {browse ? (
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{children}</div>
         ) : (
-          <div className="flex-1 overflow-auto px-4 py-8">
+          <div className="flex-1 overflow-auto px-3 py-4 lg:px-4 lg:py-8">
             <div className="mx-auto w-full max-w-6xl">{children}</div>
           </div>
         )}

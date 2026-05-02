@@ -5,7 +5,7 @@ import { peekDocumentNumber } from "@/lib/documents/peek-document-number";
 import type { DocumentNumberingCreateProps } from "@/lib/documents/document-numbering";
 
 const field =
-  "rounded-md border border-[var(--border)] bg-[var(--card)] px-2 py-1.5 text-sm w-full max-w-[280px]";
+  "min-w-0 rounded-md border border-[var(--border)] bg-[var(--card)] px-2 py-1.5 text-sm w-full sm:max-w-[280px]";
 
 export function DocumentNumberSeriesCreateBlock({
   numbering,
@@ -46,7 +46,7 @@ export function DocumentNumberSeriesCreateBlock({
   const slotOpts = Array.from({ length: numbering.maxSlots }, (_, i) => i + 1);
 
   return (
-    <div className="flex flex-wrap items-end gap-4">
+    <div className="grid grid-cols-1 gap-4 sm:flex sm:flex-wrap sm:items-end">
       <div className="flex flex-col gap-1 text-sm">
         <span className="text-[var(--muted)]">Document no. (preview)</span>
         <div

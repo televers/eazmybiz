@@ -47,7 +47,7 @@ export function DeleteDraftSalesDocumentButton({
       type="button"
       disabled={pending}
       onClick={onDelete}
-      className="rounded-md border border-red-200 bg-[var(--card)] px-4 py-2 text-sm text-red-700 hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/40 disabled:opacity-60"
+      className="inline-flex min-h-11 w-full touch-manipulation items-center justify-center rounded-md border border-red-200 bg-[var(--card)] px-4 py-2 text-sm text-red-700 hover:bg-red-50 disabled:opacity-60 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/40 sm:w-auto"
     >
       {pending ? "Deleting…" : "Delete draft"}
     </button>
