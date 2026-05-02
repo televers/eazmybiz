@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { secondarySkyButtonMd } from "@/lib/ui/primary-button";
 
 const SHARE_BLURB =
-  "I'm using eazmybiz for everyday business documentation — quotations, packing lists, delivery challans, and visitor passes. Take a look:";
+  "Hey, check out eazmybiz to create and organize your everyday business documentation — quotations, packing lists, delivery challans, gate passes and visitor passes. Signup and start using free. Here's the link:";
 
 function IconShare(props: { className?: string }) {
   return (

@@ -6,6 +6,7 @@ import type { TurnstileInstance } from "@marsidev/react-turnstile";
 import { getClientAuthOrigin } from "@/lib/auth/site-origin-client";
 import { createClient } from "@/lib/supabase/client";
 import { AuthTurnstile } from "@/components/auth/auth-turnstile";
+import { EazmybizLockupLogo } from "@/components/brand/eazmybiz-lockup-logo";
 import { primaryButtonMd } from "@/lib/ui/primary-button";
 import { isTurnstileConfigured } from "@/lib/captcha/turnstile-site-key";
 
@@ -51,6 +52,7 @@ export default function ForgotPasswordPage() {
   if (sent) {
     return (
       <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4">
+        <EazmybizLockupLogo className="mb-8" />
         <h1 className="mb-2 text-2xl font-semibold">Check your email</h1>
         <p className="text-sm text-[var(--muted)]">
           If an account exists for <span className="font-medium text-[var(--foreground)]">{email}</span>, we sent a link
@@ -67,6 +69,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4">
+      <EazmybizLockupLogo className="mb-8" />
       <h1 className="mb-2 text-2xl font-semibold">Forgot password</h1>
       <p className="mb-6 text-sm text-[var(--muted)]">
         Enter your email and we&apos;ll send you a link to choose a new password.

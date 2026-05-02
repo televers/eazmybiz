@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { consumeEmailAuthRedirect } from "@/lib/auth/consume-email-auth-redirect";
+import { EazmybizLockupLogo } from "@/components/brand/eazmybiz-lockup-logo";
 import { createClient } from "@/lib/supabase/client";
 import { primaryButtonMd } from "@/lib/ui/primary-button";
 
@@ -67,6 +68,7 @@ export default function ResetPasswordPage() {
   if (!ready) {
     return (
       <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4">
+        <EazmybizLockupLogo className="mb-8" />
         <p className="text-sm text-[var(--muted)]">Opening your reset link…</p>
       </div>
     );
@@ -74,6 +76,7 @@ export default function ResetPasswordPage() {
 
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4">
+      <EazmybizLockupLogo className="mb-8" />
       <h1 className="mb-2 text-2xl font-semibold">Set a new password</h1>
       <p className="mb-6 text-sm text-[var(--muted)]">Choose a strong password for your account.</p>
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
