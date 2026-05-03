@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <LegalDocLayout title="Privacy Policy" lastUpdated="4 April 2026">
+    <LegalDocLayout title="Privacy Policy" lastUpdated="3 May 2026">
       <section className="space-y-3">
         <h2 className="text-base font-semibold text-[var(--foreground)]">1. Who we are</h2>
         <p className="text-[var(--muted)]">
@@ -123,14 +123,29 @@ export default function PrivacyPage() {
         <h2 className="text-base font-semibold text-[var(--foreground)]">11. Contact</h2>
         <p className="text-[var(--muted)]">
           Questions about this policy or our privacy practices may be directed to Televers Networks Private Limited,
-          New Delhi, India, via the contact or support route published for the Service, or through your account’s
-          administrators.
+          New Delhi, India, at{" "}
+          <a
+            href="mailto:eazmybiz@televers.com"
+            className="text-sky-600 underline hover:no-underline dark:text-sky-400"
+          >
+            eazmybiz@televers.com
+          </a>
+          {" "}
+          (<strong className="text-[var(--foreground)]">support</strong> and{" "}
+          <strong className="text-[var(--foreground)]">billing</strong>), via the contact or support route published for
+          the Service, or through your account’s administrators.
         </p>
       </section>
 
       <p className="pt-2 text-[var(--muted)]">
-        See also our <Link href="/terms" className="text-sky-600 underline hover:no-underline dark:text-sky-400">
+        See also our{" "}
+        <Link href="/terms" className="text-sky-600 underline hover:no-underline dark:text-sky-400">
           Terms &amp; Conditions
+        </Link>
+        {" "}
+        and{" "}
+        <Link href="/refund-policy" className="text-sky-600 underline hover:no-underline dark:text-sky-400">
+          Cancellation &amp; Refund Policy
         </Link>
         .
       </p>

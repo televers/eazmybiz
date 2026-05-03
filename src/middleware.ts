@@ -11,6 +11,7 @@ const publicPaths = new Set([
   "/auth/callback",
   "/auth/set-password",
   "/terms",
+  "/refund-policy",
   "/privacy",
   "/pricing",
 ]);

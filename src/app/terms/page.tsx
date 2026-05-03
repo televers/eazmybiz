@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   return (
-    <LegalDocLayout title="Terms & Conditions" lastUpdated="4 April 2026">
+    <LegalDocLayout title="Terms & Conditions" lastUpdated="3 May 2026">
       <section className="space-y-3">
         <h2 className="text-base font-semibold text-[var(--foreground)]">1. Operator</h2>
         <p className="text-[var(--muted)]">
@@ -99,10 +99,30 @@ export default function TermsPage() {
       <section className="space-y-3">
         <h2 className="text-base font-semibold text-[var(--foreground)]">10. Contact</h2>
         <p className="text-[var(--muted)]">
-          For questions about these Terms, please contact us through the support channels indicated in the Service or via
-          your account administrator’s contact with Televers Networks Private Limited.
+          For questions about these Terms, <strong className="text-[var(--foreground)]">billing</strong>, or{" "}
+          <strong className="text-[var(--foreground)]">support</strong>, email{" "}
+          <a
+            href="mailto:eazmybiz@televers.com"
+            className="text-sky-600 underline hover:no-underline dark:text-sky-400"
+          >
+            eazmybiz@televers.com
+          </a>
+          , or reach us through the support channels indicated in the Service or via your account administrator’s contact
+          with Televers Networks Private Limited.
         </p>
       </section>
+
+      <p className="pt-2 text-[var(--muted)]">
+        See also our{" "}
+        <Link href="/refund-policy" className="text-sky-600 underline hover:no-underline dark:text-sky-400">
+          Cancellation &amp; Refund Policy
+        </Link>{" "}
+        and{" "}
+        <Link href="/privacy" className="text-sky-600 underline hover:no-underline dark:text-sky-400">
+          Privacy Policy
+        </Link>
+        .
+      </p>
     </LegalDocLayout>
   );
 }
