@@ -29,6 +29,18 @@ function isProtectedPath(pathname: string) {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   /**
+   * Secured by CRON_SECRET + service role on the handler; no session cookie.
+   * Skipping auth here avoids redirect-to-/login (and POST→405 on /login) for cron and CLI pings.
+   * Match with or without trailing slash so we never send this path through session checks.
+   */
+  const keepAlivePath =
+    pathname.endsWith("/") && pathname !== "/"
+      ? pathname.slice(0, -1)
+      : pathname;
+  if (keepAlivePath === "/api/supabase/keep-alive") {
+    return NextResponse.next();
+  }
+  /**
    * Supabase often redirects PKCE links to **Site URL** only (e.g. /?code=...).
    * Forward to /auth/callback so the client can exchange the code (recovery, invite, OAuth).
    */
