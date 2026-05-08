@@ -1,15 +1,19 @@
 import { redirect } from "next/navigation";
-import { canAccessSubscriptionPricing, getOrgContext } from "@/lib/org";
+import { canAccessSubscriptionPricing, getOrgContext, isAccountOwnerForActiveOrg } from "@/lib/org";
 import { primaryButtonMd } from "@/lib/ui/primary-button";
+import { CashfreeInrCheckoutButton } from "@/components/pricing/cashfree-inr-checkout-button";
+import { CashfreeReturnBanner } from "@/components/pricing/cashfree-return-banner";
 import { PlanComparisonTables } from "@/components/pricing/plan-comparison-tables";
 import {
   formatInr,
   formatIsoDateMedium,
   formatUsd,
+  formatInrPaise,
   planTierDisplayName,
   PRICING_INR,
   PRICING_USD,
 } from "@/lib/pricing/display";
+import { computeInrCheckoutTotals, INR_GST_CHECKOUT_NOTE } from "@/lib/pricing/inr-checkout-tax";
 import type { PlanTier } from "@/types/database";
 
 function BillingCtaButton({ children }: { children: React.ReactNode }) {
@@ -17,7 +21,7 @@ function BillingCtaButton({ children }: { children: React.ReactNode }) {
     <button
       type="button"
       disabled
-      title="Payment checkout will be available here soon."
+      title="Checkout for your region is not available in the app yet."
       className={primaryButtonMd + " cursor-not-allowed opacity-70"}
     >
       {children}
@@ -30,7 +34,7 @@ function BillingSecondaryButton({ children }: { children: React.ReactNode }) {
     <button
       type="button"
       disabled
-      title="Payment checkout will be available here soon."
+      title="Checkout for your region is not available in the app yet."
       className="cursor-not-allowed rounded-md border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm font-medium text-[var(--foreground)] opacity-70"
     >
       {children}
@@ -38,7 +42,16 @@ function BillingSecondaryButton({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default async function PricingPage() {
+export default async function PricingPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ cf_order_id?: string | string[] | undefined }>;
+}) {
+  const sp = (await searchParams) ?? {};
+  const rawCfOrder = sp.cf_order_id;
+  const cfOrderId =
+    typeof rawCfOrder === "string" ? rawCfOrder.trim() : Array.isArray(rawCfOrder) ? rawCfOrder[0]?.trim() ?? "" : "";
+
   const ctx = await getOrgContext();
   if (!ctx) return null;
   if (!canAccessSubscriptionPricing(ctx)) {
@@ -47,16 +60,24 @@ export default async function PricingPage() {
 
   const isIndia = ctx.organization.commercial_region === "in";
   const subscriptionPlan: PlanTier = ctx.entitlement?.plan ?? ctx.organization.plan;
+  const canInrCheckout = isIndia && isAccountOwnerForActiveOrg(ctx);
   const periodEnd = ctx.entitlement?.plan_period_end ?? null;
   const periodStart = ctx.entitlement?.plan_period_start ?? null;
   const endLabel = formatIsoDateMedium(periodEnd);
   const startLabel = formatIsoDateMedium(periodStart);
+
+  const inrProTotals = computeInrCheckoutTotals(PRICING_INR.pro.sale);
+  const inrMaxTotals = computeInrCheckoutTotals(PRICING_INR.max.sale);
 
   return (
     <div className="mx-auto max-w-4xl space-y-8">
       <div>
         <h1 className="text-2xl font-semibold text-[var(--foreground)]">Pricing plans</h1>
       </div>
+
+      {cfOrderId ? (
+        <CashfreeReturnBanner orderId={cfOrderId} />
+      ) : null}
 
       <PlanComparisonTables />
 
@@ -65,6 +86,9 @@ export default async function PricingPage() {
         <p className="mt-1 text-xs text-[var(--muted)]">
           Paid plans: <strong>365 days</strong> from activation. Shown prices are introductory (50% off list).
         </p>
+        {isIndia ? (
+          <p className="mt-2 text-xs leading-relaxed text-[var(--muted)]">{INR_GST_CHECKOUT_NOTE}</p>
+        ) : null}
 
         <div className="mt-4 rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 text-sm">
           <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">Your subscription</h3>
@@ -90,10 +114,42 @@ export default async function PricingPage() {
             </p>
           )}
           <p className="mt-2 text-xs text-[var(--muted)]">
-            Checkout is not wired up yet — buttons below are placeholders for the upcoming payment flow.
+            {canInrCheckout ? (
+              <>
+                Pay in INR via Cashfree payment gateway (cards, UPI, net banking). Prices are before 18% GST — you
+                confirm the exact amount inclusive of GST before the Cashfree screen opens. After payment, your plan
+                updates once our server confirms it — usually within a minute.
+              </>
+            ) : isIndia ? (
+              <>
+                INR checkout is only available when you are the billing owner for this company. Company admins can view
+                prices but cannot complete payment on behalf of the owner.
+              </>
+            ) : (
+              <>
+                International (non-INR) checkout is not wired up yet — buttons below stay disabled until a second
+                gateway is added.
+              </>
+            )}
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
-            {subscriptionPlan === "free" ? (
+            {canInrCheckout ? (
+              subscriptionPlan === "free" ? (
+                <>
+                  <CashfreeInrCheckoutButton targetPlan="pro">Upgrade to Pro</CashfreeInrCheckoutButton>
+                  <CashfreeInrCheckoutButton targetPlan="max">Upgrade to Max</CashfreeInrCheckoutButton>
+                </>
+              ) : subscriptionPlan === "pro" ? (
+                <>
+                  <CashfreeInrCheckoutButton targetPlan="pro">Extend Pro</CashfreeInrCheckoutButton>
+                  <CashfreeInrCheckoutButton targetPlan="max" variant="secondary">
+                    Upgrade to Max
+                  </CashfreeInrCheckoutButton>
+                </>
+              ) : (
+                <CashfreeInrCheckoutButton targetPlan="max">Extend Max</CashfreeInrCheckoutButton>
+              )
+            ) : subscriptionPlan === "free" ? (
               <>
                 <BillingCtaButton>Upgrade to Pro</BillingCtaButton>
                 <BillingCtaButton>Upgrade to Max</BillingCtaButton>
@@ -125,6 +181,9 @@ export default async function PricingPage() {
                   <span className="ml-2 rounded bg-emerald-500/15 px-2 py-0.5 text-xs font-medium text-emerald-800 dark:text-emerald-200">
                     50% off
                   </span>
+                  <span className="mt-1 block text-xs text-[var(--muted)]">
+                    Total with 18% GST: {formatInrPaise(inrProTotals.totalInr)}
+                  </span>
                 </>
               ) : (
                 <>
@@ -149,6 +208,9 @@ export default async function PricingPage() {
                   <span className="ml-2 rounded bg-emerald-500/15 px-2 py-0.5 text-xs font-medium text-emerald-800 dark:text-emerald-200">
                     50% off
                   </span>
+                  <span className="mt-1 block text-xs text-[var(--muted)]">
+                    Total with 18% GST: {formatInrPaise(inrMaxTotals.totalInr)}
+                  </span>
                 </>
               ) : (
                 <>
@@ -163,6 +225,19 @@ export default async function PricingPage() {
             </span>
           </li>
         </ul>
+        {isIndia ? (
+          <p className="mt-4 rounded-lg border border-[var(--border)] bg-[var(--card)] px-4 py-3 text-xs leading-relaxed text-[var(--muted)]">
+            Already on <strong className="text-[var(--foreground)]">Pro</strong> and want to move to{" "}
+            <strong className="text-[var(--foreground)]">Max</strong>? We’ve got you covered: you get a pro-rata discount
+            for your remaining Pro plan days. After payment, you’ll be upgraded to Max plan for one year. Your exact
+            total (including 18% GST) appears in the confirmation step before Cashfree checkout. If your remaining Pro
+            credit is worth the full Max price or more, checkout is not available — email{" "}
+            <a href="mailto:eazmybiz@televers.com" className="font-medium text-sky-600 underline hover:text-sky-700">
+              eazmybiz@televers.com
+            </a>{" "}
+            to upgrade.
+          </p>
+        ) : null}
       </div>
 
       <div className="rounded-lg border-2 border-sky-500/40 bg-sky-500/5 px-4 py-4 dark:border-sky-400/30 dark:bg-sky-500/10">

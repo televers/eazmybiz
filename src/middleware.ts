@@ -41,6 +41,9 @@ export async function middleware(request: NextRequest) {
   if (keepAlivePath === "/api/supabase/keep-alive") {
     return NextResponse.next();
   }
+  if (keepAlivePath === "/api/webhooks/cashfree") {
+    return NextResponse.next();
+  }
   /**
    * Supabase often redirects PKCE links to **Site URL** only (e.g. /?code=...).
    * Forward to /auth/callback so the client can exchange the code (recovery, invite, OAuth).

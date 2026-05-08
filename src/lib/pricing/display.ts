@@ -78,6 +78,16 @@ export function formatInr(amount: number): string {
   }).format(amount);
 }
 
+/** INR with paise (e.g. GST breakdown and Cashfree totals). */
+export function formatInrPaise(amount: number): string {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+}
+
 export function formatUsd(amount: number): string {
   return new Intl.NumberFormat("en-US", {
     style: "currency",

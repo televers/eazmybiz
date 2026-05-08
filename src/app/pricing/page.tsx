@@ -7,10 +7,12 @@ import { PlanComparisonTables } from "@/components/pricing/plan-comparison-table
 import {
   formatInr,
   formatUsd,
+  formatInrPaise,
   PRICING_INR,
   PRICING_USD,
   publicPricingAudienceFromHeaders,
 } from "@/lib/pricing/display";
+import { computeInrCheckoutTotals, INR_GST_CHECKOUT_NOTE } from "@/lib/pricing/inr-checkout-tax";
 import { primaryButtonMd, secondarySkyButtonMd } from "@/lib/ui/primary-button";
 
 type AudienceMode = "in" | "intl" | "both";
@@ -84,6 +86,9 @@ export default async function PublicPricingPage({
   const h = await headers();
   const audience = resolveAudience(sp.billing, h);
 
+  const inrProTotals = computeInrCheckoutTotals(PRICING_INR.pro.sale);
+  const inrMaxTotals = computeInrCheckoutTotals(PRICING_INR.max.sale);
+
   return (
     <div className="flex min-h-screen flex-col bg-[var(--background)] text-[var(--foreground)]">
       <header className="border-b border-[var(--border)] bg-[var(--background)]/90 backdrop-blur-sm">
@@ -122,6 +127,10 @@ export default async function PublicPricingPage({
             </p>
 
             {audience !== "intl" ? (
+              <p className="mt-2 text-xs leading-relaxed text-[var(--muted)]">{INR_GST_CHECKOUT_NOTE}</p>
+            ) : null}
+
+            {audience !== "intl" ? (
               <div className="mt-4">
                 {audience === "both" ? (
                   <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">India (INR)</h3>
@@ -140,6 +149,9 @@ export default async function PublicPricingPage({
                       </span>
                       <span className="text-[var(--muted)]"> / year</span>
                       <FiftyBadge />
+                      <span className="mt-1 block w-full text-xs text-[var(--muted)]">
+                        Total with 18% GST: {formatInrPaise(inrProTotals.totalInr)}
+                      </span>
                     </span>
                   </li>
                   <li className="flex flex-wrap items-baseline justify-between gap-2 rounded-lg border border-[var(--border)] bg-[var(--card)] px-4 py-3">
@@ -151,6 +163,9 @@ export default async function PublicPricingPage({
                       </span>
                       <span className="text-[var(--muted)]"> / year</span>
                       <FiftyBadge />
+                      <span className="mt-1 block w-full text-xs text-[var(--muted)]">
+                        Total with 18% GST: {formatInrPaise(inrMaxTotals.totalInr)}
+                      </span>
                     </span>
                   </li>
                 </ul>

@@ -88,7 +88,9 @@ Single source of truth distilled from product planning. Update this file when sc
 | **Pro** | ~~₹3,999~~ **₹1,999** / year (50% off list) | ~~US$99~~ **US$49** / year (50% off list) |
 | **Max** | ~~₹9,999~~ **₹4,999** / year (50% off list) | ~~US$199~~ **US$99** / year (50% off list) |
 
-*List prices are for display (e.g. strikethrough + “50% off”); paid tiers charge the **sale** amount. Currency and tax handling at payment integration time.*
+*List prices are for display (e.g. strikethrough + “50% off”); paid tiers charge the **sale** amount **plus applicable Indian GST** at INR checkout (currently **18%** on the pre-tax sale). Currency and tax handling follow integration rules.*
+
+- **Pro to Max (INR) mid-term:** Charge is the Max annual **pre-tax** sale minus **pro-rata credit** for remaining Pro days (**IST** calendar; annual Pro sale ÷ 365), **never negative** (unused time cannot make the balance due go below zero). **GST** applies to the payable amount. If credit **fully covers** the Max sale, **self-serve checkout is not offered** — the customer **contacts support** to complete the upgrade. After payment (or a manual upgrade), **Max** is **365 days** from upgrade (new term).
 
 #### 2.1.4 Commercial geography (where “companies” count)
 
