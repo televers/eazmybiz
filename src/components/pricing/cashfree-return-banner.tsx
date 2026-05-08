@@ -17,7 +17,6 @@ const terminal: Set<string> = new Set(["failed", "cancelled", "expired", "user_d
 export function CashfreeReturnBanner({ orderId }: { orderId: string }) {
   const router = useRouter();
   const [state, setState] = useState<PollState>({ phase: "polling" });
-  const [slowHint, setSlowHint] = useState(false);
   const clearedQuery = useRef(false);
 
   useEffect(() => {
@@ -74,11 +73,8 @@ export function CashfreeReturnBanner({ orderId }: { orderId: string }) {
 
     void tick();
 
-    const slowTimer = window.setTimeout(() => setSlowHint(true), 12_000);
-
     return () => {
       cancelled = true;
-      window.clearTimeout(slowTimer);
     };
   }, [orderId, router]);
 
@@ -89,12 +85,6 @@ export function CashfreeReturnBanner({ orderId }: { orderId: string }) {
         <p className="mt-1 text-xs text-[var(--muted)]">
           This usually takes a few seconds. Your plan updates automatically once the payment is verified.
         </p>
-        {slowHint ? (
-          <p className="mt-2 text-xs text-[var(--muted)]">
-            Still waiting? On a laptop, ensure your app can receive Cashfree webhooks (for local testing, use a tunnel
-            such as ngrok and set that URL in Cashfree). Production deployments should confirm the webhook automatically.
-          </p>
-        ) : null}
       </div>
     );
   }
