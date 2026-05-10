@@ -29,9 +29,12 @@ export function CompanyForm({
   isAccountOwnerForOrg,
   pendingQueue,
   billingCountryCode = null,
+  afterSaveRedirect = null,
 }: {
   /** Subscription billing country — listed first under Suggested when valid. */
   billingCountryCode?: string | null;
+  /** When set, navigate here after a successful save (e.g. onboarding → dashboard). */
+  afterSaveRedirect?: string | null;
   initial: {
     name: string;
     countryCode: string;
@@ -117,6 +120,11 @@ export function CompanyForm({
       });
       if (result.infoMessage) {
         setInfo(result.infoMessage);
+      }
+      if (afterSaveRedirect && !result.pendingLegalSubmitted) {
+        router.replace(afterSaveRedirect);
+        router.refresh();
+        return;
       }
       router.refresh();
     } catch (err: unknown) {

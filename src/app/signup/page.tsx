@@ -10,6 +10,7 @@ import { EazmybizLockupLogo } from "@/components/brand/eazmybiz-lockup-logo";
 import { LegalFooter } from "@/components/legal/legal-footer";
 import { validatePasswordStrength } from "@/lib/auth/password-policy";
 import { isTurnstileConfigured } from "@/lib/captcha/turnstile-site-key";
+import { authCaptchaRequiredButMissing } from "@/lib/captcha/auth-captcha-required";
 import { primaryButtonMd } from "@/lib/ui/primary-button";
 
 export default function SignupPage() {
@@ -22,6 +23,7 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const captchaRequired = isTurnstileConfigured();
+  const captchaBlockedDeployment = authCaptchaRequiredButMissing();
 
   const onCaptchaToken = useCallback((token: string | null) => {
     setCaptchaToken(token);
@@ -39,13 +41,17 @@ export default function SignupPage() {
       setError("Passwords do not match.");
       return;
     }
+    if (captchaBlockedDeployment) {
+      setError("Human verification is not configured. Set NEXT_PUBLIC_TURNSTILE_SITE_KEY on the server.");
+      return;
+    }
     if (captchaRequired && !captchaToken) {
       setError("Please complete the human verification step.");
       return;
     }
     setLoading(true);
     const supabase = createClient();
-    const { error: signError } = await supabase.auth.signUp({
+    const { data, error: signError } = await supabase.auth.signUp({
       email: email.trim(),
       password,
       ...(captchaRequired && captchaToken ? { options: { captchaToken } } : {}),
@@ -55,6 +61,11 @@ export default function SignupPage() {
       setError(signError.message);
       turnstileRef.current?.reset();
       setCaptchaToken(null);
+      return;
+    }
+    if (!data.session) {
+      router.replace("/login?notice=confirm_email");
+      router.refresh();
       return;
     }
     router.replace("/onboarding");
@@ -67,8 +78,15 @@ export default function SignupPage() {
         <EazmybizLockupLogo className="mb-8" />
         <h1 className="mb-2 text-2xl font-semibold">Create account</h1>
         <p className="mb-6 text-sm text-[var(--muted)]">
-          Create your eazmybiz account, then set up your company on the next step.
+          Create your eazmybiz account. After you sign up, we email you a confirmation link if required — then use Sign in
+          below.
         </p>
+        {captchaBlockedDeployment ? (
+          <p className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-100">
+            Turnstile is required in production. Add <span className="font-mono text-xs">NEXT_PUBLIC_TURNSTILE_SITE_KEY</span> in
+            your hosting environment (and enable CAPTCHA in Supabase Auth).
+          </p>
+        ) : null}
         <form onSubmit={onSubmit} className="flex flex-col gap-4">
           <label className="flex flex-col gap-1 text-sm">
             <span className="text-[var(--muted)]">Email</span>
@@ -109,11 +127,16 @@ export default function SignupPage() {
           <p className="text-xs leading-relaxed text-[var(--muted)]">
             Use at least 8 characters with at least one letter and one number.
           </p>
-          <AuthTurnstile turnstileRef={turnstileRef} onTokenChange={onCaptchaToken} className="flex justify-center py-1" />
+          {captchaRequired ? (
+            <>
+              <p className="text-xs font-medium text-[var(--foreground)]">Human verification</p>
+              <AuthTurnstile turnstileRef={turnstileRef} onTokenChange={onCaptchaToken} className="flex justify-center py-1" />
+            </>
+          ) : null}
           {error ? <p className="text-sm text-red-600">{error}</p> : null}
           <button
             type="submit"
-            disabled={loading || (captchaRequired && !captchaToken)}
+            disabled={loading || captchaBlockedDeployment || (captchaRequired && !captchaToken)}
             className={primaryButtonMd}
           >
             {loading ? "Creating…" : "Sign up"}

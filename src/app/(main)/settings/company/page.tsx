@@ -16,7 +16,19 @@ import type { PendingOrgProfileChange } from "./profile-types";
 import { coerceToLibphonenumberCountry } from "@/lib/geo/iso-country-select-options";
 import { normalizeVisitorPassPrintLayout } from "@/lib/visitors/visitor-pass-print-layout";
 
-export default async function CompanySettingsPage() {
+export default async function CompanySettingsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ onboarding?: string | string[] }>;
+}) {
+  const sp = (await searchParams) ?? {};
+  const rawOnboarding = sp.onboarding;
+  const onboarding =
+    rawOnboarding === "1" ||
+    rawOnboarding === "true" ||
+    (Array.isArray(rawOnboarding) &&
+      (rawOnboarding[0] === "1" || rawOnboarding[0] === "true"));
+
   const ctx = await getOrgContext();
   if (!ctx) return null;
   if (!ctx.canManageMemberships) {
@@ -91,6 +103,12 @@ export default async function CompanySettingsPage() {
         </p>
       </div>
 
+      {onboarding ? (
+        <p className="rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-950 dark:border-sky-800 dark:bg-sky-950/50 dark:text-sky-100">
+          Complete your organization profile below. When you save, you’ll go to the dashboard.
+        </p>
+      ) : null}
+
       <LogoBlock logoPath={o.logo_storage_path} canEditLogo={isAccountOwnerForOrg} />
 
       <CompanyForm
@@ -98,6 +116,7 @@ export default async function CompanySettingsPage() {
         isAccountOwnerForOrg={isAccountOwnerForOrg}
         pendingQueue={pendingQueue}
         billingCountryCode={ctx.entitlement?.billing_country_code ?? null}
+        afterSaveRedirect={onboarding ? "/dashboard" : null}
         initial={{
           name: o.name,
           countryCode: coerceToLibphonenumberCountry(o.country_code),

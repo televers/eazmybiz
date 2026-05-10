@@ -50,7 +50,9 @@ export async function middleware(request: NextRequest) {
    */
   if (
     pathname === "/" &&
-    (request.nextUrl.searchParams.has("code") || request.nextUrl.searchParams.has("token_hash"))
+    (request.nextUrl.searchParams.has("code") ||
+      request.nextUrl.searchParams.has("token_hash") ||
+      request.nextUrl.searchParams.has("error"))
   ) {
     const url = request.nextUrl.clone();
     url.pathname = "/auth/callback";

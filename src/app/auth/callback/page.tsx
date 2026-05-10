@@ -30,17 +30,39 @@ export default function AuthCallbackPage() {
       const params = new URLSearchParams(window.location.search);
       const next = safeNextPath(params.get("next"));
 
-      const fail = () => {
+      /** Email is usually already verified when exchange fails (second tap, mail scanner). Send users to friendly sign-in copy. */
+      const failToLoginAfterCallback = () => {
         if (cancelled) return;
-        router.replace("/login?error=auth_callback");
+        router.replace("/login?notice=email_verified");
       };
 
       const result = await consumeEmailAuthRedirect(supabase);
       if (cancelled) return;
 
       if (result.ok) {
+        if (result.forceLoginAfterVerify && !result.passwordRecovery) {
+          await supabase.auth.signOut();
+          router.replace("/login?notice=email_verified");
+          router.refresh();
+          return;
+        }
         const dest = result.passwordRecovery ? "/reset-password" : next;
         router.replace(dest);
+        router.refresh();
+        return;
+      }
+
+      if (result.kind === "error") {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (session?.user?.email_confirmed_at && !isPasswordRecoverySession(session)) {
+          await supabase.auth.signOut();
+          router.replace("/login?notice=email_verified");
+          router.refresh();
+          return;
+        }
+        failToLoginAfterCallback();
         router.refresh();
         return;
       }
@@ -57,7 +79,8 @@ export default function AuthCallbackPage() {
         }
       }
 
-      fail();
+      failToLoginAfterCallback();
+      router.refresh();
     })();
 
     return () => {

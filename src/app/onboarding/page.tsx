@@ -21,10 +21,10 @@ export default async function OnboardingPage() {
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col px-4">
       <div className="flex flex-1 flex-col justify-center py-8">
-        <h1 className="mb-2 text-2xl font-semibold">Your company</h1>
+        <h1 className="mb-2 text-2xl font-semibold">Your Organization</h1>
         <p className="mb-6 text-sm text-[var(--muted)]">
-          Free plan includes one company and up to two users. You can invite a teammate later from
-          company settings.
+          Free plan includes one organization and up to two users. Enter your workspace name and country; then complete
+          your company profile before opening the dashboard.
         </p>
         <OnboardingForm />
       </div>
