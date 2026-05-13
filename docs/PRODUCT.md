@@ -170,6 +170,7 @@ All resets use **Asia/Kolkata** — see §4.
 
 - **Target:** Secured cloud, strong tenant isolation, restricted operational access.
 - **Auth bot resistance (engineering):** Sign-in, sign-up, and forgot-password use **Cloudflare Turnstile** when configured (`NEXT_PUBLIC_TURNSTILE_SITE_KEY` + Supabase Auth CAPTCHA with Turnstile). This reduces automated credential abuse; document creation remains gated by authenticated sessions and RLS.
+- **Paid plan checkout (engineering):** India (`commercial_region = in`) uses **Cashfree** in INR (+ in-app 18% GST on the sale). International uses **Razorpay** in **USD** (`PRICING_USD` sale amounts, same pro-rata upgrade rules as INR, no GST in-app). Both write `public.subscriptions` and fulfil `account_entitlements` via webhooks.
 - **Strong “we cannot read your data”** may require **customer-managed keys** or field-level encryption later — phase if a segment requires it.
 
 ---

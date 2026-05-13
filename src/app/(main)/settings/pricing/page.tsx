@@ -3,6 +3,7 @@ import { canAccessSubscriptionPricing, getOrgContext, isAccountOwnerForActiveOrg
 import { primaryButtonMd } from "@/lib/ui/primary-button";
 import { CashfreeInrCheckoutButton } from "@/components/pricing/cashfree-inr-checkout-button";
 import { CashfreeReturnBanner } from "@/components/pricing/cashfree-return-banner";
+import { RazorpayUsdCheckoutButton } from "@/components/pricing/razorpay-usd-checkout-button";
 import { PlanComparisonTables } from "@/components/pricing/plan-comparison-tables";
 import {
   formatInr,
@@ -16,25 +17,17 @@ import {
 import { computeInrCheckoutTotals, INR_GST_CHECKOUT_NOTE } from "@/lib/pricing/inr-checkout-tax";
 import type { PlanTier } from "@/types/database";
 
-function BillingCtaButton({ children }: { children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      disabled
-      title="Checkout for your region is not available in the app yet."
-      className={primaryButtonMd + " cursor-not-allowed opacity-70"}
-    >
+function DisabledCheckoutCue({ variant, children }: { variant: "primary" | "secondary"; children: React.ReactNode }) {
+  const title = "Checkout is available only when you are the subscription billing owner.";
+  return variant === "primary" ? (
+    <button type="button" disabled title={title} className={primaryButtonMd + " cursor-not-allowed opacity-70"}>
       {children}
     </button>
-  );
-}
-
-function BillingSecondaryButton({ children }: { children: React.ReactNode }) {
-  return (
+  ) : (
     <button
       type="button"
       disabled
-      title="Checkout for your region is not available in the app yet."
+      title={title}
       className="cursor-not-allowed rounded-md border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm font-medium text-[var(--foreground)] opacity-70"
     >
       {children}
@@ -45,12 +38,15 @@ function BillingSecondaryButton({ children }: { children: React.ReactNode }) {
 export default async function PricingPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ cf_order_id?: string | string[] | undefined }>;
+  searchParams?: Promise<{ cf_order_id?: string | string[] | undefined; rz_order_id?: string | string[] | undefined }>;
 }) {
   const sp = (await searchParams) ?? {};
   const rawCfOrder = sp.cf_order_id;
   const cfOrderId =
     typeof rawCfOrder === "string" ? rawCfOrder.trim() : Array.isArray(rawCfOrder) ? rawCfOrder[0]?.trim() ?? "" : "";
+  const rawRzOrder = sp.rz_order_id;
+  const rzOrderId =
+    typeof rawRzOrder === "string" ? rawRzOrder.trim() : Array.isArray(rawRzOrder) ? rawRzOrder[0]?.trim() ?? "" : "";
 
   const ctx = await getOrgContext();
   if (!ctx) return null;
@@ -60,7 +56,9 @@ export default async function PricingPage({
 
   const isIndia = ctx.organization.commercial_region === "in";
   const subscriptionPlan: PlanTier = ctx.entitlement?.plan ?? ctx.organization.plan;
-  const canInrCheckout = isIndia && isAccountOwnerForActiveOrg(ctx);
+  const ownerForOrg = isAccountOwnerForActiveOrg(ctx);
+  const canInrCheckout = isIndia && ownerForOrg;
+  const canUsdCheckout = !isIndia && ownerForOrg;
   const periodEnd = ctx.entitlement?.plan_period_end ?? null;
   const periodStart = ctx.entitlement?.plan_period_start ?? null;
   const endLabel = formatIsoDateMedium(periodEnd);
@@ -77,6 +75,9 @@ export default async function PricingPage({
 
       {cfOrderId ? (
         <CashfreeReturnBanner orderId={cfOrderId} />
+      ) : null}
+      {rzOrderId ? (
+        <CashfreeReturnBanner orderId={rzOrderId} />
       ) : null}
 
       <PlanComparisonTables />
@@ -120,6 +121,12 @@ export default async function PricingPage({
                 confirm the exact amount inclusive of GST before the Cashfree screen opens. After payment, your plan
                 updates once our server confirms it — usually within a minute.
               </>
+            ) : canUsdCheckout ? (
+              <>
+                Pay in USD via Razorpay (international cards). The confirmation step shows your exact annual amount
+                (USD) before Checkout opens. After payment, your plan updates once our server confirms it — usually
+                within a minute.
+              </>
             ) : isIndia ? (
               <>
                 INR checkout is only available when you are the billing owner for this company. Company admins can view
@@ -127,8 +134,8 @@ export default async function PricingPage({
               </>
             ) : (
               <>
-                International (non-INR) checkout is not wired up yet — buttons below stay disabled until a second
-                gateway is added.
+                International (USD) checkout is only available when you are the billing owner for this company. Company
+                admins can view prices but cannot complete payment on behalf of the owner.
               </>
             )}
           </p>
@@ -149,18 +156,42 @@ export default async function PricingPage({
               ) : (
                 <CashfreeInrCheckoutButton targetPlan="max">Extend Max</CashfreeInrCheckoutButton>
               )
+            ) : canUsdCheckout ? (
+              subscriptionPlan === "free" ? (
+                <>
+                  <RazorpayUsdCheckoutButton targetPlan="pro" ownerEmail={ctx.userEmail}>
+                    Upgrade to Pro
+                  </RazorpayUsdCheckoutButton>
+                  <RazorpayUsdCheckoutButton targetPlan="max" ownerEmail={ctx.userEmail}>
+                    Upgrade to Max
+                  </RazorpayUsdCheckoutButton>
+                </>
+              ) : subscriptionPlan === "pro" ? (
+                <>
+                  <RazorpayUsdCheckoutButton targetPlan="pro" ownerEmail={ctx.userEmail}>
+                    Extend Pro
+                  </RazorpayUsdCheckoutButton>
+                  <RazorpayUsdCheckoutButton targetPlan="max" variant="secondary" ownerEmail={ctx.userEmail}>
+                    Upgrade to Max
+                  </RazorpayUsdCheckoutButton>
+                </>
+              ) : (
+                <RazorpayUsdCheckoutButton targetPlan="max" ownerEmail={ctx.userEmail}>
+                  Extend Max
+                </RazorpayUsdCheckoutButton>
+              )
             ) : subscriptionPlan === "free" ? (
               <>
-                <BillingCtaButton>Upgrade to Pro</BillingCtaButton>
-                <BillingCtaButton>Upgrade to Max</BillingCtaButton>
+                <DisabledCheckoutCue variant="primary">Upgrade to Pro</DisabledCheckoutCue>
+                <DisabledCheckoutCue variant="primary">Upgrade to Max</DisabledCheckoutCue>
               </>
             ) : subscriptionPlan === "pro" ? (
               <>
-                <BillingCtaButton>Extend Pro</BillingCtaButton>
-                <BillingSecondaryButton>Upgrade to Max</BillingSecondaryButton>
+                <DisabledCheckoutCue variant="primary">Extend Pro</DisabledCheckoutCue>
+                <DisabledCheckoutCue variant="secondary">Upgrade to Max</DisabledCheckoutCue>
               </>
             ) : (
-              <BillingCtaButton>Extend Max</BillingCtaButton>
+              <DisabledCheckoutCue variant="primary">Extend Max</DisabledCheckoutCue>
             )}
           </div>
         </div>
@@ -237,7 +268,19 @@ export default async function PricingPage({
             </a>{" "}
             to upgrade.
           </p>
-        ) : null}
+        ) : (
+          <p className="mt-4 rounded-lg border border-[var(--border)] bg-[var(--card)] px-4 py-3 text-xs leading-relaxed text-[var(--muted)]">
+            Already on <strong className="text-[var(--foreground)]">Pro</strong> and want to move to{" "}
+            <strong className="text-[var(--foreground)]">Max</strong>? We’ve got you covered: you get a pro-rata discount
+            for your remaining Pro plan days. After payment, you’ll be upgraded to Max plan for one year. Your exact
+            total appears in the confirmation step before Razorpay checkout. If your remaining Pro credit is worth the
+            full Max price or more, checkout is not available — email{" "}
+            <a href="mailto:eazmybiz@televers.com" className="font-medium text-sky-600 underline hover:text-sky-700">
+              eazmybiz@televers.com
+            </a>{" "}
+            to upgrade.
+          </p>
+        )}
       </div>
 
       <div className="rounded-lg border-2 border-sky-500/40 bg-sky-500/5 px-4 py-4 dark:border-sky-400/30 dark:bg-sky-500/10">

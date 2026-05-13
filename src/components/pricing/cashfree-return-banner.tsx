@@ -1,8 +1,13 @@
 "use client";
 
+/**
+ * Polls subscription status after Cashfree redirect or Razorpay Checkout redirect (same `subscriptions` rows).
+ */
+
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getCashfreeOrderReturnStatus } from "@/app/(main)/settings/pricing/actions";
+import { replacePricingPageHistoryEntry } from "@/lib/pricing/checkout-history";
 import { formatIsoDateMedium, planTierDisplayName } from "@/lib/pricing/display";
 
 type PollState =
@@ -43,7 +48,7 @@ export function CashfreeReturnBanner({ orderId }: { orderId: string }) {
         router.refresh();
         if (!clearedQuery.current && typeof window !== "undefined") {
           clearedQuery.current = true;
-          window.history.replaceState(null, "", "/settings/pricing");
+          replacePricingPageHistoryEntry();
         }
         return;
       }
@@ -53,13 +58,14 @@ export function CashfreeReturnBanner({ orderId }: { orderId: string }) {
         else setState({ phase: "failed" });
         if (!clearedQuery.current && typeof window !== "undefined") {
           clearedQuery.current = true;
-          window.history.replaceState(null, "", "/settings/pricing");
+          replacePricingPageHistoryEntry();
         }
         return;
       }
 
       attempts += 1;
       if (attempts >= maxAttempts) {
+        replacePricingPageHistoryEntry();
         setState({
           phase: "error",
           message:

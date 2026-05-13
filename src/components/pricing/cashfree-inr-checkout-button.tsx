@@ -2,7 +2,8 @@
 
 import { useTransition } from "react";
 import { getInrCheckoutQuote, createCashfreeSubscriptionOrder } from "@/app/(main)/settings/pricing/actions";
-import { formatInr, formatInrPaise, planTierDisplayName } from "@/lib/pricing/display";
+import { replacePricingPageHistoryEntry } from "@/lib/pricing/checkout-history";
+import { formatInr, formatInrPaise, planTierDisplayName, PRICING_INR } from "@/lib/pricing/display";
 import { primaryButtonMd } from "@/lib/ui/primary-button";
 
 type CashfreeGlobal = (opts: { mode: "sandbox" | "production" }) => {
@@ -67,6 +68,8 @@ export function CashfreeInrCheckoutButton({ targetPlan, variant = "primary", chi
             return;
           }
           const label = planTierDisplayName(quote.targetPlan);
+          const catalogInr =
+            quote.targetPlan === "pro" ? PRICING_INR.pro.sale : PRICING_INR.max.sale;
           const proRataLines = quote.proRata
               ? [
                   "",
@@ -78,7 +81,8 @@ export function CashfreeInrCheckoutButton({ targetPlan, variant = "primary", chi
               : [];
           const confirmText = [
             `You are paying for: ${label} (1 year from upgrade).`,
-            `Pre-tax sale price: ${formatInr(quote.subtotalInr)}`,
+            `Amount (INR): ${formatInr(catalogInr)} (annual sale price before GST)`,
+            `Pre-tax amount for checkout: ${formatInrPaise(quote.subtotalInr)}`,
             `18% Indian GST: ${formatInrPaise(quote.gstInr)}`,
             `Total charged: ${formatInrPaise(quote.totalInr)}`,
             ...proRataLines,
@@ -107,6 +111,8 @@ export function CashfreeInrCheckoutButton({ targetPlan, variant = "primary", chi
           }
           const returnUrl = `${window.location.origin}/settings/pricing?cf_order_id={order_id}`;
           const checkout = Cashfree({ mode: res.cashfreeMode });
+          /** One canonical pricing entry before redirect — reduces duplicated history when returning from Cashfree. */
+          replacePricingPageHistoryEntry();
           await Promise.resolve(
             checkout.checkout({ paymentSessionId: res.paymentSessionId, returnUrl }),
           );

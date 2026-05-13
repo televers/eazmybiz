@@ -6,6 +6,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  /** Official SDK uses dynamic requires; bundling into Server chunks breaks webpack chunk IDs locally. */
+  serverExternalPackages: ["razorpay"],
   experimental: {
     // Avoid dev-only RSC error: SegmentViewNode missing from React Client Manifest (Next devtools / bundler; common on Windows).
     devtoolSegmentExplorer: false,
