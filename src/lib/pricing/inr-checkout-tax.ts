@@ -121,6 +121,11 @@ export function computeInrCheckoutTotals(subtotalInr: number): {
 export const INR_GST_CHECKOUT_NOTE =
   "India (INR) prices below are the pre-tax sale amount. Checkout adds 18% GST; you’ll see the exact total before you pay.";
 
-/** Block back-to-back attempts while a payment may still be settling. */
-export const INR_CHECKOUT_RECENT_ATTEMPT_USER_MESSAGE =
-  "You've tried a payment recently. If your payment got failed, you may try again. If your payment was successful, please wait for 5 minutes. If money got deducted but plan didn't active, you may write to us at eazmybiz@televers.com with your payment details.";
+/** Block back-to-back attempts while a payment may still be settling (Cashfree INR + Razorpay USD). */
+export const CHECKOUT_RECENT_ATTEMPT_COOLDOWN_MS = 2 * 60 * 1000;
+
+export const CHECKOUT_RECENT_ATTEMPT_USER_MESSAGE =
+  "You've tried a payment recently. Please try after 2 minutes.\n\n" +
+  "If your payment failed, you may try again after 2 minutes.\n\n" +
+  "If your payment was successful and your plan has not activated yet, please wait a short while. " +
+  "Or you may write to us at eazmybiz@televers.com.";

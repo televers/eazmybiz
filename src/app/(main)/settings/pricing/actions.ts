@@ -5,7 +5,8 @@ import {
   computeInrCheckoutTotals,
   inrPreTaxCheckoutSubtotal,
   inrProMaxUpgradeQuoteMeta,
-  INR_CHECKOUT_RECENT_ATTEMPT_USER_MESSAGE,
+  CHECKOUT_RECENT_ATTEMPT_COOLDOWN_MS,
+  CHECKOUT_RECENT_ATTEMPT_USER_MESSAGE,
   INR_PRO_MAX_CREDIT_COVERS_CHECKOUT_MESSAGE,
 } from "@/lib/pricing/inr-checkout-tax";
 import { createClient } from "@/lib/supabase/server";
@@ -177,19 +178,19 @@ export async function createCashfreeSubscriptionOrder(
   }
   const { gstInr, totalInr } = computeInrCheckoutTotals(subtotalInr);
 
-  const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+  const cooldownSinceIso = new Date(Date.now() - CHECKOUT_RECENT_ATTEMPT_COOLDOWN_MS).toISOString();
   const { data: recentBlock } = await supabase
     .from("subscriptions")
     .select("id")
     .eq("owner_user_id", ctx.userId)
     .eq("entitlement_id", entitlement.id)
     .in("status", ["pending", "paid"])
-    .gte("created_at", fiveMinAgo)
+    .gte("created_at", cooldownSinceIso)
     .limit(1)
     .maybeSingle();
 
   if (recentBlock) {
-    return { ok: false, message: INR_CHECKOUT_RECENT_ATTEMPT_USER_MESSAGE };
+    return { ok: false, message: CHECKOUT_RECENT_ATTEMPT_USER_MESSAGE };
   }
 
   const phone = normalizeIndianPhoneForCashfree(ctx.organization.org_mobile ?? null);
@@ -298,19 +299,19 @@ export async function createRazorpayUsdSubscriptionOrder(
     return { ok: false, message: USD_PRO_MAX_CREDIT_COVERS_CHECKOUT_MESSAGE };
   }
 
-  const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+  const cooldownSinceIso = new Date(Date.now() - CHECKOUT_RECENT_ATTEMPT_COOLDOWN_MS).toISOString();
   const { data: recentBlock } = await supabase
     .from("subscriptions")
     .select("id")
     .eq("owner_user_id", ctx.userId)
     .eq("entitlement_id", entitlement.id)
     .in("status", ["pending", "paid"])
-    .gte("created_at", fiveMinAgo)
+    .gte("created_at", cooldownSinceIso)
     .limit(1)
     .maybeSingle();
 
   if (recentBlock) {
-    return { ok: false, message: INR_CHECKOUT_RECENT_ATTEMPT_USER_MESSAGE };
+    return { ok: false, message: CHECKOUT_RECENT_ATTEMPT_USER_MESSAGE };
   }
 
   const email = (ctx.userEmail ?? "").trim();
