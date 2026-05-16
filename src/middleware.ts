@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { isAuthSessionMissingError, type User } from "@supabase/supabase-js";
+import { userMustCompleteInvitePassword } from "@/lib/auth/must-complete-invite-password";
 
 const publicPaths = new Set([
   "/",
@@ -15,11 +16,6 @@ const publicPaths = new Set([
   "/privacy",
   "/pricing",
 ]);
-
-function mustSetPasswordFromInvite(user: User | null): boolean {
-  if (!user?.user_metadata || typeof user.user_metadata !== "object") return false;
-  return (user.user_metadata as Record<string, unknown>).must_set_password === true;
-}
 
 function isProtectedPath(pathname: string) {
   if (publicPaths.has(pathname)) return false;
@@ -96,7 +92,7 @@ export async function middleware(request: NextRequest) {
     console.error("[middleware] Supabase auth getUser failed (network or Edge fetch):", e);
   }
 
-  if (user && mustSetPasswordFromInvite(user)) {
+  if (user && userMustCompleteInvitePassword(user)) {
     const allowed =
       pathname === "/auth/set-password" ||
       pathname === "/auth/callback" ||
@@ -118,7 +114,7 @@ export async function middleware(request: NextRequest) {
 
   if (user && (pathname === "/login" || pathname === "/signup" || pathname === "/forgot-password")) {
     const url = request.nextUrl.clone();
-    url.pathname = mustSetPasswordFromInvite(user) ? "/auth/set-password" : "/dashboard";
+    url.pathname = userMustCompleteInvitePassword(user) ? "/auth/set-password" : "/dashboard";
     url.search = "";
     return NextResponse.redirect(url);
   }

@@ -1,6 +1,7 @@
 "use client";
 
 import type { EmailOtpType, Session, SupabaseClient } from "@supabase/supabase-js";
+import { userMustCompleteInvitePassword } from "@/lib/auth/must-complete-invite-password";
 import { isPasswordRecoverySession, redirectTypeIsPasswordRecovery } from "@/lib/auth/password-recovery-session";
 
 function hasNonEmailAuthProvider(session: Session | null): boolean {
@@ -54,6 +55,8 @@ function extendForceLoginAfterVerify(
   base: boolean,
 ): boolean {
   if (passwordRecovery) return false;
+  /** Invite (`must_set_password`): PKCE often omits `type=`; must not sign out to /login — go to set-password. */
+  if (userMustCompleteInvitePassword(session?.user ?? null)) return false;
   if (base) return true;
   if (hasNonEmailAuthProvider(session)) return false;
   if (

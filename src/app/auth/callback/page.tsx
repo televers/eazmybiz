@@ -10,6 +10,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { consumeEmailAuthRedirect } from "@/lib/auth/consume-email-auth-redirect";
+import { userMustCompleteInvitePassword } from "@/lib/auth/must-complete-invite-password";
 import { isPasswordRecoverySession } from "@/lib/auth/password-recovery-session";
 import { createClient } from "@/lib/supabase/client";
 
@@ -41,6 +42,12 @@ export default function AuthCallbackPage() {
 
       if (result.ok) {
         if (result.forceLoginAfterVerify && !result.passwordRecovery) {
+          const { data: afterUser } = await supabase.auth.getUser();
+          if (userMustCompleteInvitePassword(afterUser.user)) {
+            router.replace("/auth/set-password");
+            router.refresh();
+            return;
+          }
           await supabase.auth.signOut();
           router.replace("/login?notice=email_verified");
           router.refresh();
