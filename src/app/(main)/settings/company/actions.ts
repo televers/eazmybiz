@@ -134,21 +134,12 @@ type OrgRestPatch = {
   org_country: string | null;
   org_email: string | null;
   org_mobile: string | null;
-  packing_terms: string | null;
-  delivery_challan_terms: string | null;
   default_currency: string;
-  quotation_terms: string | null;
 };
 
 type InstantOrgPatch = Pick<
   OrgRestPatch,
-  | "country_code"
-  | "org_email"
-  | "org_mobile"
-  | "packing_terms"
-  | "delivery_challan_terms"
-  | "default_currency"
-  | "quotation_terms"
+  "country_code" | "org_email" | "org_mobile" | "default_currency"
 >;
 
 function listInstantFieldChanges(org: Organization, patch: InstantOrgPatch): string[] {
@@ -158,14 +149,9 @@ function listInstantFieldChanges(org: Organization, patch: InstantOrgPatch): str
   }
   if (normCell(org.org_email) !== normCell(patch.org_email)) labels.push("Email");
   if (normCell(org.org_mobile ?? "") !== normCell(patch.org_mobile)) labels.push("Mobile");
-  if (normCell(org.packing_terms) !== normCell(patch.packing_terms)) labels.push("Packing list terms");
-  if (normCell(org.delivery_challan_terms) !== normCell(patch.delivery_challan_terms)) {
-    labels.push("Delivery challan terms");
-  }
   if (normCell(org.default_currency).toUpperCase() !== normCell(patch.default_currency).toUpperCase()) {
     labels.push("Default currency");
   }
-  if (normCell(org.quotation_terms) !== normCell(patch.quotation_terms)) labels.push("Quotation terms");
   return labels;
 }
 
@@ -183,14 +169,9 @@ function listNonLegalFieldChanges(org: Organization, patch: OrgRestPatch): strin
   if (normCell(org.org_country) !== normCell(patch.org_country)) labels.push("Country (address)");
   if (normCell(org.org_email) !== normCell(patch.org_email)) labels.push("Email");
   if (normCell(org.org_mobile ?? "") !== normCell(patch.org_mobile)) labels.push("Mobile");
-  if (normCell(org.packing_terms) !== normCell(patch.packing_terms)) labels.push("Packing list terms");
-  if (normCell(org.delivery_challan_terms) !== normCell(patch.delivery_challan_terms)) {
-    labels.push("Delivery challan terms");
-  }
   if (normCell(org.default_currency).toUpperCase() !== normCell(patch.default_currency).toUpperCase()) {
     labels.push("Default currency");
   }
-  if (normCell(org.quotation_terms) !== normCell(patch.quotation_terms)) labels.push("Quotation terms");
   return labels;
 }
 
@@ -266,17 +247,8 @@ function instantFieldDetailLines(org: Organization, patch: InstantOrgPatch): str
   if (normCell(org.org_mobile ?? "") !== normCell(patch.org_mobile)) {
     lines.push(settingsChangeLine("Mobile", org.org_mobile, patch.org_mobile));
   }
-  if (normCell(org.packing_terms) !== normCell(patch.packing_terms)) {
-    lines.push(settingsChangeLine("Packing list terms", org.packing_terms, patch.packing_terms));
-  }
-  if (normCell(org.delivery_challan_terms) !== normCell(patch.delivery_challan_terms)) {
-    lines.push(settingsChangeLine("Delivery challan terms", org.delivery_challan_terms, patch.delivery_challan_terms));
-  }
   if (normCell(org.default_currency).toUpperCase() !== normCell(patch.default_currency).toUpperCase()) {
     lines.push(settingsChangeLine("Default currency", org.default_currency, patch.default_currency));
-  }
-  if (normCell(org.quotation_terms) !== normCell(patch.quotation_terms)) {
-    lines.push(settingsChangeLine("Quotation terms", org.quotation_terms, patch.quotation_terms));
   }
   return lines;
 }
@@ -337,15 +309,12 @@ export async function updateCompany(input: {
   orgCountry?: string;
   orgEmail?: string;
   orgMobile?: string;
-  packingTerms?: string;
-  deliveryChallanTerms?: string;
   defaultCurrency?: string;
   bankAccountHolderName?: string;
   bankName?: string;
   bankBranch?: string;
   bankAccountNo?: string;
   bankIfsc?: string;
-  quotationTerms?: string;
 }): Promise<{ pendingLegalSubmitted?: boolean; infoMessage?: string }> {
   const ctx = await getOrgContext();
   if (!ctx) throw new Error("Unauthorized");
@@ -396,20 +365,14 @@ export async function updateCompany(input: {
     org_country: orgCountry,
     org_email: normalizeOptionalOrgEmail(input.orgEmail),
     org_mobile: orgMobileNorm,
-    packing_terms: input.packingTerms?.trim() || null,
-    delivery_challan_terms: input.deliveryChallanTerms?.trim() || null,
     default_currency: defaultCurrency,
-    quotation_terms: input.quotationTerms?.trim() || null,
   };
 
   const instantPatch: InstantOrgPatch = {
     country_code: restPatch.country_code,
     org_email: restPatch.org_email,
     org_mobile: restPatch.org_mobile,
-    packing_terms: restPatch.packing_terms,
-    delivery_challan_terms: restPatch.delivery_challan_terms,
     default_currency: restPatch.default_currency,
-    quotation_terms: restPatch.quotation_terms,
   };
 
   const gstinBankLabels = changedGstinBankLabels(curSensitive, nextSensitive);
@@ -532,6 +495,60 @@ export async function updateCompany(input: {
   revalidatePath("/dashboard");
   revalidatePath("/", "layout");
   return { pendingLegalSubmitted, infoMessage };
+}
+
+export type DocumentTermsKind = "quotation" | "purchase_order" | "delivery_challan" | "packing_list";
+
+const DOCUMENT_TERMS_FIELD: Record<DocumentTermsKind, keyof Organization> = {
+  quotation: "quotation_terms",
+  purchase_order: "purchase_order_terms",
+  delivery_challan: "delivery_challan_terms",
+  packing_list: "packing_terms",
+};
+
+const DOCUMENT_TERMS_LABEL: Record<DocumentTermsKind, string> = {
+  quotation: "Quotation terms",
+  purchase_order: "Purchase order terms",
+  delivery_challan: "Delivery challan terms",
+  packing_list: "Packing list terms",
+};
+
+export async function saveDocumentTerms(kind: DocumentTermsKind, terms: string) {
+  const ctx = await getOrgContext();
+  if (!ctx) throw new Error("Unauthorized");
+  if (!ctx.canManageMemberships) {
+    throw new Error("Only company admins or the account owner can edit company settings.");
+  }
+
+  const field = DOCUMENT_TERMS_FIELD[kind];
+  const label = DOCUMENT_TERMS_LABEL[kind];
+  const next = terms.trim() || null;
+  const prev = normCell(ctx.organization[field] as string | null | undefined);
+
+  if (prev === normCell(next)) return;
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("organizations")
+    .update({ [field]: next })
+    .eq("id", ctx.organization.id);
+  if (error) throw error;
+
+  await insertOrganizationActivity(
+    supabase,
+    ctx.organization.id,
+    ctx.userId,
+    `${label} updated.`,
+    [settingsChangeLine(label, prev || null, next)],
+  );
+
+  revalidatePath("/settings/company");
+  revalidatePath("/quotations");
+  revalidatePath("/purchase-orders");
+  revalidatePath("/delivery-challans");
+  revalidatePath("/packing-lists");
+  revalidatePath("/dashboard");
+  revalidatePath("/", "layout");
 }
 
 export async function approveOrgProfileChangeRequest(requestId: string) {
@@ -710,6 +727,7 @@ export async function saveDocumentNumberingSettings(input: {
   docSeriesCustomMonth?: number | null;
   docSeriesCustomDay?: number | null;
   docPrefixQuotation: string;
+  docPrefixPurchaseOrder: string;
   docPrefixPackingList: string;
   docPrefixDeliveryChallan: string;
   docPrefixGatePass: string;
@@ -717,6 +735,7 @@ export async function saveDocumentNumberingSettings(input: {
   docMultiSeriesEnabled?: boolean;
   docSeriesExtras?: Array<{ mode: string; month?: number | null; day?: number | null }>;
   docSeriesSlotQuotation?: number;
+  docSeriesSlotPurchaseOrder?: number;
   docSeriesSlotPackingList?: number;
   docSeriesSlotDeliveryChallan?: number;
   docSeriesSlotGatePass?: number;
@@ -839,6 +858,7 @@ export async function saveDocumentNumberingSettings(input: {
     patch.doc_series_profiles = [];
     patch.doc_series_default_slot = 1;
     patch.doc_series_slot_quotation = null;
+    patch.doc_series_slot_purchase_order = null;
     patch.doc_series_slot_packing_list = null;
     patch.doc_series_slot_delivery_challan = null;
     patch.doc_series_slot_gate_pass = null;
@@ -855,6 +875,10 @@ export async function saveDocumentNumberingSettings(input: {
       );
       patch.doc_series_default_slot = qSlot;
       patch.doc_series_slot_quotation = qSlot;
+      patch.doc_series_slot_purchase_order = clampSeriesSlot(
+        Number(input.docSeriesSlotPurchaseOrder ?? 1),
+        maxSlots,
+      );
       patch.doc_series_slot_packing_list = clampSeriesSlot(
         Number(input.docSeriesSlotPackingList ?? 1),
         maxSlots,
@@ -878,6 +902,7 @@ export async function saveDocumentNumberingSettings(input: {
     } else {
       patch.doc_series_default_slot = 1;
       patch.doc_series_slot_quotation = null;
+      patch.doc_series_slot_purchase_order = null;
       patch.doc_series_slot_packing_list = null;
       patch.doc_series_slot_delivery_challan = null;
       patch.doc_series_slot_gate_pass = null;
@@ -888,6 +913,10 @@ export async function saveDocumentNumberingSettings(input: {
 
   if (plan !== "free") {
     patch.doc_prefix_quotation = validatePaidDocPrefix("Quotation prefix", input.docPrefixQuotation);
+    patch.doc_prefix_purchase_order = validatePaidDocPrefix(
+      "Purchase order prefix",
+      input.docPrefixPurchaseOrder,
+    );
     patch.doc_prefix_packing_list = validatePaidDocPrefix(
       "Packing list prefix",
       input.docPrefixPackingList,

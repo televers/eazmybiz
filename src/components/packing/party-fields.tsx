@@ -12,6 +12,8 @@ import { primaryButtonMd } from "@/lib/ui/primary-button";
 import { IntlMobileField } from "@/components/phone/intl-mobile-field";
 import { normalizeIndianGstinInput } from "@/lib/tax/gstin-india";
 import { AddressLocalityFields } from "@/components/address/address-locality-fields";
+import { coerceToLibphonenumberCountry } from "@/lib/geo/iso-country-select-options";
+import { PartyAddressPreview } from "@/components/purchase-order/party-address-preview";
 
 export type { PartyListRow };
 export { partyBillFromList, partyShipFromList };
@@ -60,6 +62,10 @@ export function PartyFields({
   organizationCountryCode = "IN",
   /** Subscription billing country — shown first in mobile ISD Suggested when set. */
   billingCountryCode,
+  /** When true with locked address, show print-style preview instead of address inputs. */
+  compactAddressPreview = false,
+  /** Tighter spacing for manual address entry. */
+  dense = false,
 }: {
   /** Omit to hide the section heading (e.g. nested ship forms). */
   title?: string;
@@ -86,6 +92,8 @@ export function PartyFields({
   onReleasePartyLink?: () => void;
   organizationCountryCode?: string;
   billingCountryCode?: string | null;
+  compactAddressPreview?: boolean;
+  dense?: boolean;
 }) {
   const router = useRouter();
   const field =
@@ -218,8 +226,17 @@ export function PartyFields({
   }
 
   const shellCls = embedded
-    ? "space-y-2"
-    : "space-y-2 rounded-lg border border-[var(--border)] bg-[var(--card)] p-4";
+    ? dense
+      ? "space-y-1.5"
+      : "space-y-2"
+    : dense
+      ? "space-y-1.5 rounded-lg border border-[var(--border)] bg-[var(--card)] p-3"
+      : "space-y-2 rounded-lg border border-[var(--border)] bg-[var(--card)] p-3 sm:p-4";
+
+  const fieldsGap = dense ? "grid gap-1.5" : "grid gap-2";
+
+  const hideAddressInputs = compactAddressPreview && lockAddressFields;
+  const countryIso = coerceToLibphonenumberCountry(value.country || organizationCountryCode);
 
   return (
     <>
@@ -277,7 +294,8 @@ export function PartyFields({
         {lockAddressFields && addressLockHint ? (
           <p className="text-[11px] leading-snug text-[var(--muted)]">{addressLockHint}</p>
         ) : null}
-        {showNameCombobox ? (
+        {hideAddressInputs ? <PartyAddressPreview party={value} /> : null}
+        {!hideAddressInputs && showNameCombobox ? (
           <div ref={partyComboRef} className="relative">
             <input
               className={field}
@@ -321,7 +339,7 @@ export function PartyFields({
               </ul>
             ) : null}
           </div>
-        ) : (
+        ) : !hideAddressInputs ? (
           <input
             className={lockAddressFields ? fieldReadOnly : field}
             placeholder="Name"
@@ -329,7 +347,9 @@ export function PartyFields({
             readOnly={lockAddressFields}
             onChange={(e) => onChange({ ...value, name: e.target.value })}
           />
-        )}
+        ) : null}
+        {!hideAddressInputs ? (
+          <div className={fieldsGap}>
         <input
           className={lockAddressFields ? fieldReadOnly : field}
           placeholder="Address line 1"
@@ -348,9 +368,15 @@ export function PartyFields({
           city={value.city ?? ""}
           state={value.state ?? ""}
           pin={value.pin ?? ""}
-          countryIso={value.country ?? ""}
+          countryIso={countryIso}
           disabled={lockAddressFields}
-          onChange={(patch) => onChange({ ...value, ...patch })}
+          onChange={(patch) => {
+            const next = { ...value, ...patch };
+            if (patch.country != null) {
+              next.country = coerceToLibphonenumberCountry(patch.country || organizationCountryCode);
+            }
+            onChange(next);
+          }}
           billingCountryCode={billingCountryCode}
           organizationCountryCode={organizationCountryCode}
           inputClassName={lockAddressFields ? fieldReadOnly : field}
@@ -363,7 +389,13 @@ export function PartyFields({
           readOnly={lockAddressFields}
           onChange={(e) => onChange({ ...value, gstin: normalizeIndianGstinInput(e.target.value) })}
         />
-        <div ref={contactRegionRef} className="grid gap-2 sm:grid-cols-2" onBlur={onContactRegionBlur}>
+          </div>
+        ) : null}
+        <div
+          ref={contactRegionRef}
+          className={dense ? "grid gap-1.5 sm:grid-cols-2" : "grid gap-2 sm:grid-cols-2"}
+          onBlur={onContactRegionBlur}
+        >
           <input
             className={field}
             placeholder="Contact person"

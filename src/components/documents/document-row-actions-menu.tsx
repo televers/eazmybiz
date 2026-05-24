@@ -4,6 +4,10 @@ import { useEffect, useLayoutEffect, useRef, useState, useTransition } from "rea
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import {
+  deleteDraftPurchaseOrder,
+  duplicatePurchaseOrder,
+} from "@/app/(main)/purchase-orders/actions";
+import {
   deleteDraftQuotation,
   duplicateQuotation,
 } from "@/app/(main)/quotations/actions";
@@ -16,6 +20,7 @@ import { duplicateDeliveryChallan } from "@/app/(main)/delivery-challans/actions
 import { duplicateVisitorVisit } from "@/lib/visitors/actions";
 export type DocumentRowActionsKind =
   | "quotation"
+  | "purchase_order"
   | "packing_list"
   | "delivery_challan"
   | "gate_pass"
@@ -25,6 +30,8 @@ function printHref(kind: DocumentRowActionsKind, id: string): string {
   switch (kind) {
     case "quotation":
       return `/quotations/${id}/print`;
+    case "purchase_order":
+      return `/purchase-orders/${id}/print`;
     case "packing_list":
       return `/packing-lists/${id}/print`;
     case "delivery_challan":
@@ -40,6 +47,8 @@ function pdfApiHref(kind: DocumentRowActionsKind, id: string): string | null {
   switch (kind) {
     case "quotation":
       return `/api/quotations/${id}/pdf`;
+    case "purchase_order":
+      return `/api/purchase-orders/${id}/pdf`;
     case "packing_list":
       return `/api/packing-lists/${id}/pdf`;
     case "delivery_challan":
@@ -54,6 +63,8 @@ function duplicateOpenHref(kind: DocumentRowActionsKind, id: string): string {
   switch (kind) {
     case "quotation":
       return `/quotations/${id}/edit`;
+    case "purchase_order":
+      return `/purchase-orders/${id}/edit`;
     case "packing_list":
       return `/packing-lists/${id}/edit`;
     case "delivery_challan":
@@ -66,7 +77,7 @@ function duplicateOpenHref(kind: DocumentRowActionsKind, id: string): string {
 }
 
 function hasPdfDownloadFile(kind: DocumentRowActionsKind, status: string): boolean {
-  if (kind === "quotation" || kind === "packing_list" || kind === "delivery_challan") {
+  if (kind === "quotation" || kind === "purchase_order" || kind === "packing_list" || kind === "delivery_challan") {
     return status === "issued";
   }
   return false;
@@ -107,7 +118,7 @@ function showDownloadPdfOption(kind: DocumentRowActionsKind, status: string): bo
   if (kind === "visitor") {
     return false;
   }
-  if (kind === "quotation" || kind === "packing_list" || kind === "delivery_challan") {
+  if (kind === "quotation" || kind === "purchase_order" || kind === "packing_list" || kind === "delivery_challan") {
     return status === "issued";
   }
   /* Gate pass: no PDF in this menu — use Print preview (same URL). */
@@ -118,6 +129,8 @@ async function duplicateDocument(kind: DocumentRowActionsKind, id: string): Prom
   switch (kind) {
     case "quotation":
       return duplicateQuotation(id);
+    case "purchase_order":
+      return duplicatePurchaseOrder(id);
     case "packing_list":
       return duplicatePackingList(id);
     case "delivery_challan":
@@ -133,6 +146,8 @@ function listPathAfterDeleteDraft(kind: DocumentRowActionsKind): string | null {
   switch (kind) {
     case "quotation":
       return "/quotations";
+    case "purchase_order":
+      return "/purchase-orders";
     case "packing_list":
       return "/packing-lists";
     case "delivery_challan":
@@ -146,6 +161,8 @@ async function deleteDraftSalesDocument(kind: DocumentRowActionsKind, id: string
   switch (kind) {
     case "quotation":
       return deleteDraftQuotation(id);
+    case "purchase_order":
+      return deleteDraftPurchaseOrder(id);
     case "packing_list":
       return deleteDraftPackingList(id);
     case "delivery_challan":
@@ -161,7 +178,7 @@ function isDraftDocumentStatus(status: string): boolean {
 
 function showDeleteDraftOption(kind: DocumentRowActionsKind, status: string): boolean {
   if (!isDraftDocumentStatus(status)) return false;
-  return kind === "quotation" || kind === "packing_list" || kind === "delivery_challan";
+  return kind === "quotation" || kind === "purchase_order" || kind === "packing_list" || kind === "delivery_challan";
 }
 
 function openInNewTab(path: string) {

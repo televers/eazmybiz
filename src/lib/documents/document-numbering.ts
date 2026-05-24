@@ -142,7 +142,7 @@ export function maxDocumentSeriesSlots(plan: PlanTier): number {
   return 1;
 }
 
-export type DocumentNumberingDocKind = "qt" | "pl" | "dc";
+export type DocumentNumberingDocKind = "qt" | "po" | "pl" | "dc";
 
 export type DocumentSeriesSlotKind = DocumentNumberingDocKind | "gp" | "vs";
 
@@ -171,6 +171,7 @@ export function effectiveSeriesSlotForDocKind(
     | "doc_multi_series_enabled"
     | "doc_series_default_slot"
     | "doc_series_slot_quotation"
+    | "doc_series_slot_purchase_order"
     | "doc_series_slot_packing_list"
     | "doc_series_slot_delivery_challan"
     | "doc_series_slot_gate_pass"
@@ -183,7 +184,9 @@ export function effectiveSeriesSlotForDocKind(
   const col =
     kind === "qt"
       ? org.doc_series_slot_quotation
-      : kind === "pl"
+      : kind === "po"
+        ? org.doc_series_slot_purchase_order
+        : kind === "pl"
         ? org.doc_series_slot_packing_list
         : kind === "dc"
           ? org.doc_series_slot_delivery_challan
@@ -201,6 +204,7 @@ export function documentNumberingCreateProps(
     | "doc_multi_series_enabled"
     | "doc_series_default_slot"
     | "doc_series_slot_quotation"
+    | "doc_series_slot_purchase_order"
     | "doc_series_slot_packing_list"
     | "doc_series_slot_delivery_challan"
   >,
@@ -320,7 +324,7 @@ export function usedDocumentSeriesSlots(
 }
 
 /** Doc-type keys aligned with `organizations.doc_prefix_*` and RPC `p_doc_type`. */
-export const DOC_PREFIX_OVERRIDE_KINDS = ["qt", "pl", "dc", "gp", "vs"] as const;
+export const DOC_PREFIX_OVERRIDE_KINDS = ["qt", "po", "pl", "dc", "gp", "vs"] as const;
 export type DocPrefixOverrideKind = (typeof DOC_PREFIX_OVERRIDE_KINDS)[number];
 
 /** Series 2..N only: optional printed prefix per document type (slot 1 uses main prefix fields). */
@@ -361,6 +365,7 @@ export function parseDocPrefixOverridesFromOrg(
 
 const PREFIX_OVERRIDE_LABEL: Record<DocPrefixOverrideKind, string> = {
   qt: "Quotation prefix",
+  po: "Purchase order prefix",
   pl: "Packing list prefix",
   dc: "Delivery challan prefix",
   gp: "Gate pass prefix",

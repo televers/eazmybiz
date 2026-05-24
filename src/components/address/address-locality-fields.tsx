@@ -3,6 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { IsoCountrySelect } from "@/components/iso-country-select";
 import { coerceToLibphonenumberCountry } from "@/lib/geo/iso-country-select-options";
+import {
+  normalizePostalForLookup,
+  postalLookupIdleHint,
+} from "@/lib/geo/postal-input-readiness";
 
 type Props = {
   city: string;
@@ -19,7 +23,7 @@ type Props = {
   pinHelpId?: string;
 };
 
-const DEBOUNCE_MS = 480;
+const DEBOUNCE_MS = 900;
 
 async function fetchPostalLookup(country: string, postal: string, signal: AbortSignal): Promise<{
   city: string;
@@ -88,14 +92,21 @@ export function AddressLocalityFields({
       return;
     }
 
+    const normalized = normalizePostalForLookup(cc, trimmed);
+    if (!normalized) {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      setLookupStatus("idle");
+      return;
+    }
+
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
       const last = lastAutofillRef.current;
-      if (last && last.pin === trimmed && city === last.city && state === last.state) {
+      if (last && last.pin === normalized && city === last.city && state === last.state) {
         setLookupStatus("hit");
         return;
       }
-      runLookup(trimmed, cc);
+      runLookup(normalized, cc);
     }, DEBOUNCE_MS);
 
     return () => {
@@ -116,7 +127,7 @@ export function AddressLocalityFields({
         ? "City and state filled from postal code — you can edit if needed."
         : lookupStatus === "miss"
           ? "No automatic match for this postal code. Enter city and state manually."
-          : "Enter PIN / ZIP to fill city and state when available for the selected country.";
+          : postalLookupIdleHint(cc);
 
   return (
     <div className="grid gap-2 sm:grid-cols-2">

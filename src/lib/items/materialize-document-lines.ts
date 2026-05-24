@@ -124,3 +124,6 @@ export async function materializeDcLinesForSave(
   }
   return out;
 }
+
+/** Purchase orders reuse quotation line shape and save-as-item behavior. */
+export const materializePurchaseOrderLinesForSave = materializeQuotationLinesForSave;

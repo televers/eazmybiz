@@ -3,6 +3,7 @@ import {
   loadPartyDocuments,
   type PartyDcListRow,
   type PartyPackingListRow,
+  type PartyPurchaseOrderListRow,
   type PartyQuotationListRow,
 } from "@/lib/parties/party-documents";
 import { primaryButtonCompact } from "@/lib/ui/primary-button";
@@ -199,6 +200,64 @@ function ChallansSection({ rows, empty }: { rows: PartyDcListRow[]; empty: strin
   );
 }
 
+function PurchaseOrdersSection({ rows, empty }: { rows: PartyPurchaseOrderListRow[]; empty: string }) {
+  return (
+    <div className={documentListTableCardWithBgClassName}>
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border)] bg-[var(--card)] px-4 py-2">
+        <h3 className="text-sm font-semibold">Purchase orders</h3>
+        <Link href="/purchase-orders/new" className={primaryButtonCompact}>
+          Add new purchase order
+        </Link>
+      </div>
+      <div className={documentListTableScrollAreaClassName}>
+        <table className={documentListTableClassName}>
+          <thead className="bg-[var(--card)] text-[var(--muted)]">
+            <tr className="border-b border-[var(--border)]">
+              <th className="px-4 py-3 font-medium">Number</th>
+              <th className="px-4 py-3 font-medium">Date</th>
+              <th className="px-4 py-3 text-right font-medium">Value</th>
+              <th className="px-4 py-3 font-medium">Currency</th>
+              <th className="px-4 py-3 font-medium">Delivery by</th>
+              <th className="px-4 py-3 font-medium">Status</th>
+              <th className="px-4 py-3 font-medium">Issued</th>
+              <th className="w-12 px-2 py-3 text-right font-medium">
+                <span className="sr-only">Actions</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.id} className="border-t border-[var(--border)]">
+                <td className="px-4 py-3">
+                  <Link href={r.href} className="text-sky-600 underline">
+                    {r.doc_number}
+                  </Link>
+                </td>
+                <td className="px-4 py-3 text-[var(--muted)]">{r.dateDdMm}</td>
+                <td className="px-4 py-3 text-right tabular-nums">{r.value}</td>
+                <td className="px-4 py-3">{r.currency}</td>
+                <td className="px-4 py-3 text-[var(--muted)]">{r.deliveryByDdMm}</td>
+                <td className="px-4 py-3 capitalize">{r.status}</td>
+                <td className="px-4 py-3 text-[var(--muted)]">{r.issued}</td>
+                <td className="px-2 py-3 text-right align-middle">
+                  <DocumentRowActionsMenu kind="purchase_order" documentId={r.id} status={r.status} />
+                </td>
+              </tr>
+            ))}
+            {!rows.length ? (
+              <tr>
+                <td className="px-4 py-6 text-[var(--muted)]" colSpan={8}>
+                  {empty}
+                </td>
+              </tr>
+            ) : null}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 export async function PartyTransactions({
   organizationId,
   partyId,
@@ -207,7 +266,11 @@ export async function PartyTransactions({
   partyId: string;
 }) {
   const docs = await loadPartyDocuments(organizationId, partyId);
-  const total = docs.quotation.length + docs.packing_list.length + docs.delivery_challan.length;
+  const total =
+    docs.quotation.length +
+    docs.packing_list.length +
+    docs.delivery_challan.length +
+    docs.purchase_order.length;
 
   return (
     <section className="space-y-4">
@@ -217,13 +280,14 @@ export async function PartyTransactions({
           Documents linked to this party, plus older rows without a party link that still match on billing/shipping name
           or GSTIN.
           {total === 0
-            ? " Nothing yet — open a quotation, packing list, or challan and use Load party, or save addresses as this party."
+            ? " Nothing yet — open a quotation, packing list, challan, or purchase order and use Load party, or save addresses as this party."
             : null}
         </p>
       </div>
 
       <div className="space-y-4">
         <QuotationsSection rows={docs.quotation} empty="No matching quotations." />
+        <PurchaseOrdersSection rows={docs.purchase_order} empty="No matching purchase orders." />
         <PackingSection rows={docs.packing_list} empty="No matching packing lists." />
         <ChallansSection rows={docs.delivery_challan} empty="No matching delivery challans." />
       </div>

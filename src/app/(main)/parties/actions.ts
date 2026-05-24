@@ -409,7 +409,7 @@ export async function deleteParty(partyId: string) {
   await assertPartyEditable(supabase, ctx, partyId);
   if (await partyHasRelatedDocuments(ctx.organization.id, partyId)) {
     throw new Error(
-      "This party is still used on a quotation, packing list, delivery challan, or material gate pass. Remove or reassign those records before deleting the party.",
+      "This party is still used on a quotation, packing list, delivery challan, purchase order, or material gate pass. Remove or reassign those records before deleting the party.",
     );
   }
   const { error } = await supabase.from("parties").delete().eq("id", partyId).eq("organization_id", ctx.organization.id);
@@ -418,4 +418,5 @@ export async function deleteParty(partyId: string) {
   revalidatePath("/packing-lists/new");
   revalidatePath("/delivery-challans/new");
   revalidatePath("/quotations/new");
+  revalidatePath("/purchase-orders/new");
 }

@@ -106,7 +106,7 @@ export async function notifyDocumentBackdateIfNeeded(opts: {
   ctx: FullOrgContext;
   prevDocumentDate: string | null | undefined;
   nextDocumentDate: string | null | undefined;
-  docKind: "quotation" | "packing_list" | "delivery_challan";
+  docKind: "quotation" | "purchase_order" | "packing_list" | "delivery_challan";
   docNumber: string;
   isCreate?: boolean;
 }): Promise<void> {
@@ -127,9 +127,11 @@ export async function notifyDocumentBackdateIfNeeded(opts: {
     const label =
       opts.docKind === "quotation"
         ? "Quotation"
-        : opts.docKind === "packing_list"
-          ? "Packing list"
-          : "Delivery challan";
+        : opts.docKind === "purchase_order"
+          ? "Purchase order"
+          : opts.docKind === "packing_list"
+            ? "Packing list"
+            : "Delivery challan";
     const tz = orgCalendarTimezoneShortLabel(opts.ctx.organization);
     await admin.from("organization_settings_activity").insert({
       organization_id: opts.ctx.organization.id,

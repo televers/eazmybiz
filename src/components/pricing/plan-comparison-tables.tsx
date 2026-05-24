@@ -96,7 +96,9 @@ export function PlanComparisonTables() {
               <tr className="border-b border-[var(--border)]">
                 <td className="px-3 py-2.5 text-[var(--muted)]">
                   Monthly documents (combined, issued)
-                  <span className="sr-only">.</span>
+                  <span className="mt-0.5 block text-xs font-normal text-[var(--muted)]">
+                    Quotation, purchase order, packing list, and delivery challan.
+                  </span>
                 </td>
                 <td className="px-3 py-2.5">30</td>
                 <td className="px-3 py-2.5">500</td>
@@ -192,6 +194,7 @@ export function PlanComparisonTables() {
               <tbody>
                 {[
                   "Quotation",
+                  "Purchase order",
                   "Packing list",
                   "Delivery challan",
                   "Material gate pass",

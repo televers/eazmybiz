@@ -38,6 +38,12 @@ export default async function DashboardPage() {
       feature: "quotation" as FeatureKey,
     },
     {
+      href: "/purchase-orders",
+      title: "Purchase orders",
+      desc: "Orders to your vendors for procurement",
+      feature: "purchase_order" as FeatureKey,
+    },
+    {
       href: "/packing-lists",
       title: "Packing Lists",
       desc: "Package-wise items / packing in your shipments",
@@ -83,7 +89,7 @@ export default async function DashboardPage() {
             <div className="text-2xl font-semibold">
               {u.documentsUsed} / {docLimitLabel}
             </div>
-            <div className="text-[var(--muted)]">Quotation + packing list + challan combined</div>
+            <div className="text-[var(--muted)]">Quotation, PO, packing list + challan combined</div>
           </li>
           <li className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 text-sm">
             <div className="font-medium">Gate passes</div>

@@ -9,9 +9,15 @@ import { removeOrgLogo, uploadOrgLogo } from "./actions";
 export function LogoBlock({
   logoPath,
   canEditLogo,
+  showControls = true,
+  embedded = false,
 }: {
   logoPath: string | null;
   canEditLogo: boolean;
+  /** When false, only the logo preview is shown (no upload/remove). */
+  showControls?: boolean;
+  /** Omit outer section wrapper when nested inside another card. */
+  embedded?: boolean;
 }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -52,22 +58,26 @@ export function LogoBlock({
   }
 
   return (
-    <section className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-3 sm:p-4">
-      <h2 className="text-sm font-medium leading-tight">Company logo</h2>
-      {!canEditLogo ? (
+    <div className={embedded ? undefined : "rounded-lg border border-[var(--border)] bg-[var(--card)] p-3 sm:p-4"}>
+      {!embedded ? (
+        <h2 className="text-sm font-medium leading-tight">Company logo</h2>
+      ) : (
+        <p className="text-xs font-medium text-[var(--muted)]">Logo</p>
+      )}
+      {!canEditLogo && showControls ? (
         <p className="mt-1.5 text-xs text-[var(--muted)] sm:text-sm">
           Only the account owner can upload or remove the company logo.
         </p>
       ) : null}
-      <div className="mt-3 flex flex-wrap items-end gap-3">
-        <div className="relative h-20 w-40 overflow-hidden rounded border border-slate-200 bg-white">
+      <div className={`${embedded ? "mt-1.5" : "mt-3"} flex flex-wrap items-end gap-3`}>
+        <div className="relative h-16 w-32 overflow-hidden rounded border border-slate-200 bg-white sm:h-20 sm:w-40">
           {url ? (
             <Image src={url} alt="Company logo" fill className="object-contain p-1" unoptimized />
           ) : (
             <div className="flex h-full items-center justify-center text-xs text-slate-400">No logo</div>
           )}
         </div>
-        {canEditLogo ? (
+        {canEditLogo && showControls ? (
           <div className="flex flex-col gap-2">
             <label className="text-sm">
               <span className="mr-2 rounded-md border border-[var(--border)] px-3 py-2 hover:bg-[var(--border)]">
@@ -95,6 +105,6 @@ export function LogoBlock({
         ) : null}
       </div>
       {error ? <p className="mt-1.5 text-sm text-red-600">{error}</p> : null}
-    </section>
+    </div>
   );
 }

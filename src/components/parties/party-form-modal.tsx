@@ -544,7 +544,7 @@ export function PartyFormModal({
               </button>
             ) : mode === "edit" && canEditBilling && hasDocuments ? (
               <p className="text-xs text-[var(--muted)]">
-                Delete unavailable: party is used on a quotation, packing list, delivery challan, or gate pass.
+                Delete unavailable: party is used on a quotation, packing list, delivery challan, purchase order, or gate pass.
               </p>
             ) : null}
           </div>

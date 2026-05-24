@@ -2,17 +2,14 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgContext, isAccountOwnerForActiveOrg } from "@/lib/org";
 import { usedDocumentSeriesSlots } from "@/lib/documents/document-numbering";
-import {
-  defaultDeliveryChallanTerms,
-  defaultPackingTerms,
-  defaultQuotationTerms,
-} from "@/lib/packing/types";
 import { orgToProfileSnapshot, profilePendingDiff } from "./profile-diff";
-import { CompanyForm } from "./ui";
+import { CompanyProfileSection } from "./company-profile-section";
 import { DocumentNumberingSection } from "./document-numbering-section";
-import { LogoBlock } from "./logo-block";
 import { VisitorPassPrintLayoutSection } from "./visitor-pass-print-layout-section";
 import type { PendingOrgProfileChange } from "./profile-types";
+import { OrgShipAddressesSection } from "@/components/settings/org-ship-addresses-section";
+import { TermsConditionsSection } from "@/components/settings/terms-conditions-section";
+import { loadOrgShipAddresses } from "@/lib/org-ship-addresses/load";
 import { coerceToLibphonenumberCountry } from "@/lib/geo/iso-country-select-options";
 import { normalizeVisitorPassPrintLayout } from "@/lib/visitors/visitor-pass-print-layout";
 
@@ -60,6 +57,7 @@ export default async function CompanySettingsPage({
   const usedSlots = Array.from(usedDocumentSeriesSlots(seqRows as { series_key: string }[] | null)).sort(
     (a, b) => a - b,
   );
+  const orgShipAddresses = await loadOrgShipAddresses(o.id);
   const liveSnapshot = orgToProfileSnapshot(o);
   const pendingQueue = ((pendingRows ?? []) as PendingOrgProfileChange[]).map((row) => ({
     ...row,
@@ -74,6 +72,7 @@ export default async function CompanySettingsPage({
     JSON.stringify(o.doc_prefix_overrides ?? {}),
     String(o.doc_series_default_slot ?? 1),
     String(o.doc_series_slot_quotation ?? ""),
+    String(o.doc_series_slot_purchase_order ?? ""),
     String(o.doc_series_slot_packing_list ?? ""),
     String(o.doc_series_slot_delivery_challan ?? ""),
     String(o.doc_series_slot_gate_pass ?? ""),
@@ -91,15 +90,18 @@ export default async function CompanySettingsPage({
     o.region ?? "",
     o.org_address_line1 ?? "",
     o.org_city ?? "",
+    o.logo_storage_path ?? "",
+    o.quotation_terms ?? "",
+    o.purchase_order_terms ?? "",
     pendingQueue.map((p) => p.id).join(","),
   ].join("|");
 
   return (
     <div className="mx-auto max-w-2xl space-y-5">
       <div className="space-y-0.5">
-        <h1 className="text-2xl font-semibold leading-tight">Company profile</h1>
+        <h1 className="text-2xl font-semibold leading-tight">Company settings</h1>
         <p className="text-sm text-[var(--muted)]">
-          Keep your company profile updated, so your documents look professional.
+          Profile, document defaults, warehouse addresses, and numbering for your organization.
         </p>
       </div>
 
@@ -109,14 +111,14 @@ export default async function CompanySettingsPage({
         </p>
       ) : null}
 
-      <LogoBlock logoPath={o.logo_storage_path} canEditLogo={isAccountOwnerForOrg} />
-
-      <CompanyForm
+      <CompanyProfileSection
         key={formResetKey}
+        logoPath={o.logo_storage_path}
         isAccountOwnerForOrg={isAccountOwnerForOrg}
         pendingQueue={pendingQueue}
         billingCountryCode={ctx.entitlement?.billing_country_code ?? null}
         afterSaveRedirect={onboarding ? "/dashboard" : null}
+        startEditing={onboarding}
         initial={{
           name: o.name,
           countryCode: coerceToLibphonenumberCountry(o.country_code),
@@ -130,18 +132,27 @@ export default async function CompanySettingsPage({
           orgCountry: o.org_country ?? "India",
           orgEmail: o.org_email ?? "",
           orgMobile: o.org_mobile ?? "",
-          packingTerms: o.packing_terms?.trim() ? o.packing_terms : defaultPackingTerms(),
-          deliveryChallanTerms: o.delivery_challan_terms?.trim()
-            ? o.delivery_challan_terms
-            : defaultDeliveryChallanTerms(),
           defaultCurrency: o.default_currency || "INR",
           bankAccountHolderName: o.bank_account_holder_name ?? "",
           bankName: o.bank_name ?? "",
           bankBranch: o.bank_branch ?? "",
           bankAccountNo: o.bank_account_no ?? "",
           bankIfsc: o.bank_ifsc ?? "",
-          quotationTerms: o.quotation_terms?.trim() ? o.quotation_terms : defaultQuotationTerms(),
         }}
+      />
+
+      <TermsConditionsSection
+        key={`terms-${formResetKey}`}
+        quotationTerms={o.quotation_terms?.trim() ?? ""}
+        purchaseOrderTerms={o.purchase_order_terms?.trim() ?? ""}
+        deliveryChallanTerms={o.delivery_challan_terms?.trim() ?? ""}
+        packingTerms={o.packing_terms?.trim() ?? ""}
+      />
+
+      <OrgShipAddressesSection
+        slots={orgShipAddresses}
+        organizationCountryCode={coerceToLibphonenumberCountry(o.country_code)}
+        billingCountryCode={ctx.entitlement?.billing_country_code ?? null}
       />
 
       <DocumentNumberingSection

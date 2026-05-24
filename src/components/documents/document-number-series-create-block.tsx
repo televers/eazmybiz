@@ -12,16 +12,31 @@ export function DocumentNumberSeriesCreateBlock({
   documentDateYmd,
   seriesSlot,
   onSeriesSlotChange,
+  existingDocumentNumber,
+  committedSeriesSlot,
 }: {
   numbering: DocumentNumberingCreateProps;
   documentDateYmd: string;
   seriesSlot: number;
   onSeriesSlotChange: (slot: number) => void;
+  /** When editing a draft, show this number until the user changes numbering series. */
+  existingDocumentNumber?: string | null;
+  committedSeriesSlot?: number | null;
 }) {
   const [peek, setPeek] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const existingTrimmed = existingDocumentNumber?.trim() ?? "";
+  const showCommittedNumber =
+    existingTrimmed.length > 0 &&
+    (!numbering.multiSeriesEnabled || seriesSlot === committedSeriesSlot);
+
   useEffect(() => {
+    if (showCommittedNumber) {
+      setPeek(null);
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
     (async () => {
       setLoading(true);
@@ -41,7 +56,13 @@ export function DocumentNumberSeriesCreateBlock({
     return () => {
       cancelled = true;
     };
-  }, [numbering.docType, numbering.multiSeriesEnabled, documentDateYmd, seriesSlot]);
+  }, [
+    numbering.docType,
+    numbering.multiSeriesEnabled,
+    documentDateYmd,
+    seriesSlot,
+    showCommittedNumber,
+  ]);
 
   const slotOpts = Array.from({ length: numbering.maxSlots }, (_, i) => i + 1);
 
@@ -53,7 +74,13 @@ export function DocumentNumberSeriesCreateBlock({
           className={`${field} tabular-nums text-[var(--foreground)]`}
           aria-live="polite"
         >
-          {loading ? "…" : peek && peek.length > 0 ? peek : "—"}
+          {showCommittedNumber
+            ? existingTrimmed
+            : loading
+              ? "…"
+              : peek && peek.length > 0
+                ? peek
+                : "—"}
         </div>
       </div>
       {numbering.multiSeriesEnabled ? (

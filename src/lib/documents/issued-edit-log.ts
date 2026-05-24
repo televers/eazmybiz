@@ -1,6 +1,6 @@
 import type { createClient } from "@/lib/supabase/server";
 
-export type IssuedDocKind = "packing_list" | "quotation";
+export type IssuedDocKind = "packing_list" | "quotation" | "purchase_order";
 
 export async function insertIssuedDocumentEditLog(
   supabase: Awaited<ReturnType<typeof createClient>>,

@@ -48,7 +48,9 @@ export type Organization = {
   bank_account_no?: string | null;
   bank_ifsc?: string | null;
   quotation_terms?: string | null;
+  purchase_order_terms?: string | null;
   doc_prefix_quotation?: string;
+  doc_prefix_purchase_order?: string;
   doc_prefix_packing_list?: string;
   doc_prefix_delivery_challan?: string;
   doc_prefix_gate_pass?: string;
@@ -62,6 +64,7 @@ export type Organization = {
   doc_series_profiles?: unknown;
   doc_series_default_slot?: number;
   doc_series_slot_quotation?: number | null;
+  doc_series_slot_purchase_order?: number | null;
   doc_series_slot_packing_list?: number | null;
   doc_series_slot_delivery_challan?: number | null;
   doc_series_slot_gate_pass?: number | null;
@@ -79,6 +82,7 @@ export type Organization = {
 export type MembershipFeaturePermissions = Partial<
   Record<
     | "quotation"
+    | "purchase_order"
     | "packing_list"
     | "delivery_challan"
     | "gate_pass"

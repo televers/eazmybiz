@@ -4,6 +4,7 @@ import type { MemberRole } from "@/types/database";
 /** Keys stored in memberships.feature_permissions (JSON) and used by RLS. */
 export type FeatureKey =
   | "quotation"
+  | "purchase_order"
   | "packing_list"
   | "delivery_challan"
   | "gate_pass"
@@ -16,6 +17,7 @@ export type FeatureKey =
 
 export const FEATURE_KEYS: FeatureKey[] = [
   "quotation",
+  "purchase_order",
   "packing_list",
   "delivery_challan",
   "gate_pass",
@@ -30,6 +32,7 @@ export const FEATURE_KEYS: FeatureKey[] = [
 /** Human-readable module names (Team & access UI, notifications). */
 export const FEATURE_MODULE_LABELS: Record<FeatureKey, string> = {
   quotation: "Quotations",
+  purchase_order: "Purchase orders",
   packing_list: "Packing lists",
   delivery_challan: "Delivery challans",
   gate_pass: "Gate passes",
@@ -44,6 +47,7 @@ export const FEATURE_MODULE_LABELS: Record<FeatureKey, string> = {
 /** Gate / security role cannot be granted these modules (UI + server). */
 export const GATE_ROLE_FORCED_OFF_FEATURES: readonly FeatureKey[] = [
   "quotation",
+  "purchase_order",
   "parties",
   "settings_company",
 ];
@@ -73,6 +77,7 @@ export function defaultFeaturePermissionsForRole(role: MemberRole): FeaturePermi
   if (role === "gate") {
     return {
       quotation: false,
+      purchase_order: false,
       packing_list: false,
       delivery_challan: false,
       gate_pass: true,
@@ -86,6 +91,7 @@ export function defaultFeaturePermissionsForRole(role: MemberRole): FeaturePermi
   }
   return {
     quotation: true,
+    purchase_order: true,
     packing_list: true,
     delivery_challan: true,
     gate_pass: false,
@@ -101,6 +107,7 @@ export function defaultFeaturePermissionsForRole(role: MemberRole): FeaturePermi
 export function fullAccessPermissions(): FeaturePermissionMap {
   return {
     quotation: true,
+    purchase_order: true,
     packing_list: true,
     delivery_challan: true,
     gate_pass: true,

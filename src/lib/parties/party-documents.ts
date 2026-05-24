@@ -48,6 +48,19 @@ export type PartyDcListRow = {
   sortMs: number;
 };
 
+export type PartyPurchaseOrderListRow = {
+  id: string;
+  doc_number: string;
+  dateDdMm: string;
+  deliveryByDdMm: string;
+  value: string;
+  currency: string;
+  status: string;
+  issued: string;
+  href: string;
+  sortMs: number;
+};
+
 function normName(s: string | null | undefined): string {
   return (s ?? "").trim().toLowerCase().replace(/\s+/g, " ");
 }
@@ -143,6 +156,15 @@ async function partyHasRelatedGatePasses(
   return false;
 }
 
+function docMatchesVendor(vendor: unknown, keys: PartyMatchKeys): boolean {
+  const p = jsonPartyFields(vendor);
+  const nn = normName(p.name);
+  if (nn && keys.names.has(nn)) return true;
+  const gg = normGstin(p.gstin);
+  if (gg && keys.gstins.has(gg)) return true;
+  return false;
+}
+
 function docMatches(
   bill: unknown,
   ship: unknown | null,
@@ -195,6 +217,16 @@ function mergePackingRows(a: PartyPackingListRow[], b: PartyPackingListRow[]): P
 
 function mergeDcRows(a: PartyDcListRow[], b: PartyDcListRow[]): PartyDcListRow[] {
   const map = new Map<string, PartyDcListRow>();
+  for (const r of a) map.set(r.id, r);
+  for (const r of b) if (!map.has(r.id)) map.set(r.id, r);
+  return [...map.values()].sort((x, y) => y.sortMs - x.sortMs);
+}
+
+function mergePurchaseOrderRows(
+  a: PartyPurchaseOrderListRow[],
+  b: PartyPurchaseOrderListRow[],
+): PartyPurchaseOrderListRow[] {
+  const map = new Map<string, PartyPurchaseOrderListRow>();
   for (const r of a) map.set(r.id, r);
   for (const r of b) if (!map.has(r.id)) map.set(r.id, r);
   return [...map.values()].sort((x, y) => y.sortMs - x.sortMs);
@@ -294,6 +326,38 @@ function buildDcListRow(row: {
   };
 }
 
+function buildPurchaseOrderListRow(row: {
+  id: string;
+  doc_number: string;
+  status: string;
+  document_date: string | null;
+  valid_until: string | null;
+  currency: string | null | undefined;
+  issued_at: string | null;
+  created_at: string | null;
+  lines: unknown;
+  additional_charges: unknown;
+}): PartyPurchaseOrderListRow {
+  const sortMs = sortMsFromRow(row.issued_at, row.created_at, row.document_date ?? undefined);
+  const cur = (row.currency ?? "INR").trim() || "INR";
+  const totals = quotationTotalsWithAdditionalCharges(
+    linesFromJson(row.lines),
+    additionalChargesFromJson(row.additional_charges),
+  );
+  return {
+    id: row.id,
+    doc_number: row.doc_number,
+    dateDdMm: formatDocumentDateDdMmYyyy(row.document_date, row.issued_at),
+    deliveryByDdMm: formatDocumentDateDdMmYyyy(row.valid_until, null),
+    value: formatMoney(totals.final_grand_total, cur),
+    currency: cur,
+    status: row.status,
+    issued: formatDateTimeIst(row.issued_at),
+    href: `/purchase-orders/${row.id}`,
+    sortMs,
+  };
+}
+
 async function loadPartyDocumentsWithKeys(
   supabase: SupabaseClient,
   organizationId: string,
@@ -303,6 +367,7 @@ async function loadPartyDocumentsWithKeys(
   quotation: PartyQuotationListRow[];
   packing_list: PartyPackingListRow[];
   delivery_challan: PartyDcListRow[];
+  purchase_order: PartyPurchaseOrderListRow[];
 }> {
   const qSelect =
     "id, doc_number, status, document_date, valid_until, currency, bill_to, lines, additional_charges, issued_at, created_at";
@@ -310,6 +375,8 @@ async function loadPartyDocumentsWithKeys(
     "id, doc_number, status, invoice_no, document_date, bill_to, ship_to, packages, issued_at, created_at";
   const dcSelect =
     "id, doc_number, status, document_date, currency, bill_to, ship_to, transport_name, lr_docket_no, line_items, additional_charges, issued_at, created_at";
+  const poSelect =
+    "id, doc_number, status, document_date, valid_until, currency, vendor_to, lines, additional_charges, issued_at, created_at";
 
   const [
     { data: qLinked },
@@ -318,6 +385,8 @@ async function loadPartyDocumentsWithKeys(
     { data: plLegacy },
     { data: dcLinked },
     { data: dcLegacy },
+    { data: poLinked },
+    { data: poLegacy },
   ] = await Promise.all([
     supabase.from("quotations").select(qSelect).eq("organization_id", organizationId).eq("party_id", partyId),
     supabase.from("quotations").select(qSelect).eq("organization_id", organizationId).is("party_id", null),
@@ -325,6 +394,8 @@ async function loadPartyDocumentsWithKeys(
     supabase.from("packing_lists").select(plSelect).eq("organization_id", organizationId).is("party_id", null),
     supabase.from("delivery_challans").select(dcSelect).eq("organization_id", organizationId).eq("party_id", partyId),
     supabase.from("delivery_challans").select(dcSelect).eq("organization_id", organizationId).is("party_id", null),
+    supabase.from("purchase_orders").select(poSelect).eq("organization_id", organizationId).eq("party_id", partyId),
+    supabase.from("purchase_orders").select(poSelect).eq("organization_id", organizationId).is("party_id", null),
   ]);
 
   const qL = (qLinked ?? []).map((q) => buildQuotationListRow(q as Parameters<typeof buildQuotationListRow>[0]));
@@ -351,10 +422,21 @@ async function loadPartyDocumentsWithKeys(
     dcLeg.push(buildDcListRow(row));
   }
 
+  const poL = (poLinked ?? []).map((p) =>
+    buildPurchaseOrderListRow(p as Parameters<typeof buildPurchaseOrderListRow>[0]),
+  );
+  const poLeg: PartyPurchaseOrderListRow[] = [];
+  for (const p of poLegacy ?? []) {
+    const row = p as Parameters<typeof buildPurchaseOrderListRow>[0] & { vendor_to: unknown };
+    if (!docMatchesVendor(row.vendor_to, keys)) continue;
+    poLeg.push(buildPurchaseOrderListRow(row));
+  }
+
   return {
     quotation: mergeQuotationRows(qL, qLeg),
     packing_list: mergePackingRows(plL, plLeg),
     delivery_challan: mergeDcRows(dcL, dcLeg),
+    purchase_order: mergePurchaseOrderRows(poL, poLeg),
   };
 }
 
@@ -365,11 +447,12 @@ export async function loadPartyDocuments(
   quotation: PartyQuotationListRow[];
   packing_list: PartyPackingListRow[];
   delivery_challan: PartyDcListRow[];
+  purchase_order: PartyPurchaseOrderListRow[];
 }> {
   const supabase = await createClient();
   const keys = await getPartyMatchKeysFromDb(supabase, organizationId, partyId);
   if (!keys) {
-    return { quotation: [], packing_list: [], delivery_challan: [] };
+    return { quotation: [], packing_list: [], delivery_challan: [], purchase_order: [] };
   }
   return loadPartyDocumentsWithKeys(supabase, organizationId, partyId, keys);
 }
@@ -381,6 +464,9 @@ export async function partyHasRelatedDocuments(organizationId: string, partyId: 
   if (await partyHasRelatedGatePasses(supabase, organizationId, partyId, keys)) return true;
   const docs = await loadPartyDocumentsWithKeys(supabase, organizationId, partyId, keys);
   return (
-    docs.quotation.length > 0 || docs.packing_list.length > 0 || docs.delivery_challan.length > 0
+    docs.quotation.length > 0 ||
+    docs.packing_list.length > 0 ||
+    docs.delivery_challan.length > 0 ||
+    docs.purchase_order.length > 0
   );
 }

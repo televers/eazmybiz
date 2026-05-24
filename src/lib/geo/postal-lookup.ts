@@ -1,7 +1,13 @@
 /**
  * Postal / PIN lookups for address autofill. Called from Route Handlers only (not bundled to client).
- * India: api.postalpincode.in (public). Others: Zippopotam (free, no key).
+ * India: bundled India Post dataset → api.postalpincode.in (24h cache) → PIN prefix fallback.
+ * Others: Zippopotam (free, no key).
  */
+
+import { getCachedIndiaPinApi, setCachedIndiaPinApi } from "@/lib/geo/india-pin-api-cache";
+import { indiaPinPrefixFallback } from "@/lib/geo/india-pin-region";
+import { parseIndiaPinPostalpincodeResponse } from "@/lib/geo/india-pin-postalpincode";
+import { lookupIndiaPinStatic } from "@/lib/geo/india-pin-static";
 
 export type PostalLookupResult = {
   city: string;
@@ -47,39 +53,35 @@ async function fetchJson(
   return res.json().catch(() => null);
 }
 
-type IndiaPinPayload = {
-  Status?: string;
-  PostOffice?: Array<{ District?: string; Name?: string; State?: string }>;
-};
+async function lookupIndiaPinPostalpincode(
+  postal: string,
+  signal: AbortSignal,
+): Promise<PostalLookupResult | null> {
+  const cached = getCachedIndiaPinApi(postal);
+  if (cached) return cached;
 
-function normalizeIndiaApiEnvelope(raw: unknown): IndiaPinPayload | null {
-  if (raw == null) return null;
-  if (Array.isArray(raw) && raw.length > 0 && raw[0] != null && typeof raw[0] === "object") {
-    return raw[0] as IndiaPinPayload;
+  try {
+    const url = `https://api.postalpincode.in/pincode/${encodeURIComponent(postal)}`;
+    const raw = await fetchJson(url, signal, {
+      "User-Agent": "eazmybiz/1.0 (server; postal-lookup)",
+    });
+    const parsed = parseIndiaPinPostalpincodeResponse(postal, raw);
+    if (parsed) setCachedIndiaPinApi(postal, parsed);
+    return parsed;
+  } catch {
+    return null;
   }
-  if (typeof raw === "object") {
-    return raw as IndiaPinPayload;
-  }
-  return null;
 }
 
 async function lookupIndiaPin(postal: string, signal: AbortSignal): Promise<PostalLookupResult | null> {
-  const url = `https://api.postalpincode.in/pincode/${encodeURIComponent(postal)}`;
-  const raw = await fetchJson(url, signal, {
-    "User-Agent": "eazmybiz/1.0 (server; postal-lookup)",
-  });
-  const data = normalizeIndiaApiEnvelope(raw);
-  const status = String(data?.Status ?? "").trim().toLowerCase();
-  if (!data || status !== "success" || !Array.isArray(data.PostOffice) || !data.PostOffice.length) {
-    return null;
-  }
-  const po = data.PostOffice[0];
-  const district = String(po.District ?? "").trim();
-  const name = String(po.Name ?? "").trim();
-  const state = String(po.State ?? "").trim();
-  const city = district || name;
-  if (!city || !state) return null;
-  return { city, state };
+  const fromStatic = await lookupIndiaPinStatic(postal);
+  if (fromStatic) return fromStatic;
+  if (signal.aborted) return null;
+
+  const fromApi = await lookupIndiaPinPostalpincode(postal, signal);
+  if (fromApi) return fromApi;
+
+  return indiaPinPrefixFallback(postal);
 }
 
 async function lookupZippopotam(

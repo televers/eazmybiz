@@ -77,6 +77,23 @@ function IconFile() {
   );
 }
 
+/** Purchase order — procurement cart (distinct from quotation file icon). */
+function IconPurchaseOrder() {
+  return (
+    <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.75}
+        d="M6 6h15l-1.2 7.2a1 1 0 0 1-1 .8H8.2a1 1 0 0 1-1-.8L6 6Z"
+      />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 6V5a3 3 0 0 1 6 0v1" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 20.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M17 20.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" />
+    </svg>
+  );
+}
+
 function IconClipboard() {
   return (
     <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
@@ -242,6 +259,7 @@ const navItems: NavItem[] = [
   { href: "/parties", label: "Parties", icon: <IconUsers />, feature: "parties" },
   { href: "/items", label: "Items", icon: <IconCube />, feature: "items" },
   { href: "/quotations", label: "Quotations", icon: <IconFile />, feature: "quotation" },
+  { href: "/purchase-orders", label: "Purchase orders", icon: <IconPurchaseOrder />, feature: "purchase_order" },
   { href: "/packing-lists", label: "Packing lists", icon: <IconClipboard />, feature: "packing_list" },
   { href: "/delivery-challans", label: "Delivery challans", icon: <IconTruck />, feature: "delivery_challan" },
   { href: "/gate-passes", label: "Gate passes", icon: <IconGate />, feature: "gate_pass" },
