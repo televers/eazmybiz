@@ -12,16 +12,22 @@ import type { QuotationLine } from "@/lib/quotation/types";
 import { partySnapshotWithGstinNormalized } from "@/lib/tax/gstin-india";
 import { materializePurchaseOrderLinesForSave } from "@/lib/items/materialize-document-lines";
 import { partyFromJson } from "@/lib/packing/parse";
+import { linesFromJson } from "@/lib/quotation/parse";
 import { loadPartiesWithAddresses } from "@/lib/parties/load-parties";
 import { matchPartyIdFromBillSnapshot } from "@/lib/parties/match-party-from-bill";
 import { normalizePackingListTemplateForSave } from "@/lib/packing/packing-list-templates";
 import { defaultQuotationValidUntilYmd } from "@/lib/quotation/dates";
 import { orgCalendarTodayYmd } from "@/lib/dates/org-calendar";
-import { canEditIssuedDocument, ISSUED_EDIT_CLOSED_MESSAGE } from "@/lib/documents/issued-edit-window";
+import { canEditIssuedPurchaseOrder } from "@/lib/documents/issued-edit-window";
 import {
   insertIssuedDocumentEditLog,
   profileDisplayNameForUser,
 } from "@/lib/documents/issued-edit-log";
+import {
+  buildPurchaseOrderIssuedSnapshot,
+  purchaseOrderIssuedEditSummaryLines,
+  purchaseOrderIssuedSnapshotFromRow,
+} from "@/lib/purchase-order/issued-edit-diff";
 import {
   assertOptionalDocumentDateWithinBackdatePolicy,
   assertOptionalDocumentYmdNotFuture,
@@ -212,17 +218,10 @@ export async function updatePurchaseOrder(
 ) {
   const ctx = await getOrgContext();
   if (!ctx) throw new Error("Unauthorized");
-  const parties = normalizePartySnapshots(input);
-  validatePartyNames(parties.vendor_to, parties.bill_to, parties.ship_to);
-  validateLines(input.lines);
-  if (!input.delivery_period.trim()) throw new Error("Delivery period is required");
-  if (!input.valid_until?.trim()) throw new Error("Delivery by date is required.");
-
   const supabase = await createClient();
-
   const { data: existing, error: exErr } = await supabase
     .from("purchase_orders")
-    .select("status, issued_at, document_date, doc_number, numbering_series_slot")
+    .select("*")
     .eq("id", id)
     .eq("organization_id", ctx.organization.id)
     .maybeSingle();
@@ -231,10 +230,18 @@ export async function updatePurchaseOrder(
   if (
     existing.status === "issued" &&
     existing.issued_at &&
-    !canEditIssuedDocument(existing.issued_at as string)
+    !canEditIssuedPurchaseOrder(existing.issued_at as string)
   ) {
-    throw new Error(ISSUED_EDIT_CLOSED_MESSAGE);
+    throw new Error("This issued purchase order can no longer be edited.");
   }
+
+  const parties = normalizePartySnapshots(input);
+  validatePartyNames(parties.vendor_to, parties.bill_to, parties.ship_to);
+  validateLines(input.lines);
+  if (!input.delivery_period.trim()) throw new Error("Delivery period is required");
+  if (!input.valid_until?.trim()) throw new Error("Delivery by date is required.");
+
+  let issuedEditSummary: string[] | null = null;
 
   if (existing.status === "draft") {
     assertOptionalDocumentDateWithinBackdatePolicy(input.document_date, ctx);
@@ -243,6 +250,28 @@ export async function updatePurchaseOrder(
   }
 
   const linesForDb = await materializePurchaseOrderLinesForSave(supabase, ctx.organization.id, input.lines);
+
+  if (existing.status === "issued") {
+    const baseline = purchaseOrderIssuedSnapshotFromRow(existing);
+    const current = buildPurchaseOrderIssuedSnapshot({
+      document_date: input.document_date || null,
+      currency: (input.currency || "INR").toUpperCase().slice(0, 3),
+      payment_term: input.payment_term?.trim() || "",
+      delivery_inco_term: input.delivery_inco_term?.trim() || "",
+      delivery_period: input.delivery_period.trim(),
+      valid_until: input.valid_until.trim(),
+      terms_notes: input.terms_notes?.trim() || null,
+      notes: input.notes?.trim() || null,
+      vendor_to: parties.vendor_to,
+      lines: linesFromJson(linesForDb),
+      charges: normalizeAdditionalChargesForDb(input.additional_charges ?? []),
+    });
+    issuedEditSummary = purchaseOrderIssuedEditSummaryLines({ baseline, current });
+    if (issuedEditSummary.length === 0) {
+      return { party_id: (existing as { party_id?: string | null }).party_id ?? null };
+    }
+  }
+
   let partyId: string | null = await resolvePartyIdForDocument(
     supabase,
     ctx.organization.id,
@@ -363,6 +392,7 @@ export async function updatePurchaseOrder(
       documentId: id,
       editedByUserId: ctx.userId,
       editedByDisplayName: displayName,
+      summaryLines: issuedEditSummary ?? undefined,
     });
   }
 

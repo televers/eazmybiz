@@ -47,7 +47,11 @@ import {
 } from "@/lib/quotation/incoterms";
 import { PurchaseOrderAdditionalChargesSection } from "@/components/purchase-order/purchase-order-additional-charges-section";
 import { defaultQuotationValidUntilYmd } from "@/lib/quotation/dates";
-import { purchaseOrderIssuedEditSummaryLines } from "@/lib/purchase-order/issued-edit-diff";
+import {
+  buildPurchaseOrderIssuedSnapshot,
+  purchaseOrderIssuedEditSummaryLines,
+  purchaseOrderIssuedSnapshotFromRow,
+} from "@/lib/purchase-order/issued-edit-diff";
 import { partySnapshotFromOrganization } from "@/lib/purchase-order/org-address";
 import { PoOrgAddressBlock } from "@/components/purchase-order/po-org-address-block";
 import { partySnapshotHasAddressContent } from "@/components/purchase-order/party-address-preview";
@@ -70,6 +74,8 @@ import {
 import type { PackingListTemplateId } from "@/lib/packing/types";
 import type { SavedItemRow } from "@/lib/items/saved-item-types";
 import { ItemDescriptionWithSavedSuggest } from "@/components/items/item-description-saved-suggest";
+import { DocumentLineMoveControls } from "@/components/documents/document-line-move-controls";
+import { moveArrayItem } from "@/lib/ui/move-array-item";
 import { savedItemDetailsSubtitle } from "@/lib/items/saved-item-subtitle";
 
 const TAX_DECIMAL_PLACES = 3;
@@ -468,32 +474,21 @@ export function PurchaseOrderEditor({
   }
 
   const issuedPurchaseOrderBaseline = useMemo(() => {
-    if (mode !== "edit" || documentStatus !== "issued") return null;
-    return {
-      lines: seedLines.map((l) =>
-        computeLineFromInputs({
-          description: l.description.trim(),
-          make_service_provider: l.make_service_provider.trim(),
-          model_part_no_description: l.model_part_no_description.trim(),
-          hsn_sac: l.hsn_sac.trim(),
-          unit: l.unit.trim() || "Pcs",
-          qty: l.qty,
-          unit_price: l.unit_price,
-          tax_percent: l.tax_percent,
-          item_preset_id: l.item_preset_id,
-          save_as_item: l.save_as_item,
-        }),
-      ),
-      charges: additionalChargesFromJson(initial?.additional_charges ?? null)
-        .map((c) => ({
-          label: String(c.label ?? "").trim(),
-          amount: Math.round(Number(c.amount) * 100) / 100,
-          tax_percent: Math.round(Number(c.tax_percent) * 1000) / 1000,
-        }))
-        .filter((c) => c.label.length > 0 || c.amount > 0)
-        .slice(0, 2),
-    };
-  }, [mode, documentStatus, seedLines, initial?.additional_charges]);
+    if (mode !== "edit" || documentStatus !== "issued" || !initial) return null;
+    return purchaseOrderIssuedSnapshotFromRow({
+      document_date: initial.document_date ?? null,
+      currency: initial.currency,
+      payment_term: initial.payment_term,
+      delivery_inco_term: initial.delivery_inco_term,
+      delivery_period: initial.delivery_period,
+      valid_until: initial.valid_until,
+      terms_notes: initial.terms_notes,
+      notes: initial.notes,
+      vendor_to: initial.vendor_to,
+      lines: seedLines,
+      additional_charges: initial.additional_charges,
+    });
+  }, [mode, documentStatus, initial, seedLines]);
 
   function updateLine(i: number, patch: Partial<QuotationLine>) {
     setLines((prev) =>
@@ -543,6 +538,16 @@ export function PurchaseOrderEditor({
     setTaxCustomDraft((prev) => (prev.length <= 1 ? prev : prev.filter((_, j) => j !== i)));
     setQtyDraft((prev) => (prev.length <= 1 ? prev : prev.filter((_, j) => j !== i)));
     setUnitPriceDraft((prev) => (prev.length <= 1 ? prev : prev.filter((_, j) => j !== i)));
+  }
+
+  function moveLine(i: number, delta: -1 | 1) {
+    const j = i + delta;
+    if (j < 0 || j >= lines.length) return;
+    setLines((prev) => moveArrayItem(prev, i, j));
+    setLineTaxCustom((prev) => moveArrayItem(prev, i, j));
+    setTaxCustomDraft((prev) => moveArrayItem(prev, i, j));
+    setQtyDraft((prev) => moveArrayItem(prev, i, j));
+    setUnitPriceDraft((prev) => moveArrayItem(prev, i, j));
   }
 
   /** Apply qty, unit price, and tax drafts so save matches the form (handles submit without blur). */
@@ -697,17 +702,28 @@ export function PurchaseOrderEditor({
     if (mode === "edit" && documentStatus === "issued" && issuedPurchaseOrderBaseline) {
       const curLines = linesWithFlushedDrafts(lines).map((l) => normalizeLineForSave(l));
       const curCharges = normalizeAdditionalChargesPayload();
-      const bullets = purchaseOrderIssuedEditSummaryLines({
+      const current = buildPurchaseOrderIssuedSnapshot({
+        document_date: documentDate || null,
         currency,
-        baselineLines: issuedPurchaseOrderBaseline.lines,
-        baselineCharges: issuedPurchaseOrderBaseline.charges,
-        currentLines: curLines,
-        currentCharges: curCharges,
+        payment_term: paymentTermFinal,
+        delivery_inco_term: deliveryIncoFinal,
+        delivery_period: deliveryPeriodFinal,
+        valid_until: validUntil,
+        terms_notes: termsNotes.trim() ? termsNotes : null,
+        notes: notes.trim() ? notes : null,
+        vendor_to: vendorTo,
+        lines: curLines,
+        charges: curCharges,
       });
-      if (bullets.length > 0) {
-        const msg = `Save changes to this issued purchase order?\n\n${bullets.map((b) => `• ${b}`).join("\n")}`;
-        if (!window.confirm(msg)) return;
+      const bullets = purchaseOrderIssuedEditSummaryLines({
+        baseline: issuedPurchaseOrderBaseline,
+        current,
+      });
+      if (bullets.length === 0) {
+        return;
       }
+      const msg = `Save changes to this issued purchase order?\n\n${bullets.map((b) => `• ${b}`).join("\n")}`;
+      if (!window.confirm(msg)) return;
     }
 
     setLoading(true);
@@ -780,6 +796,12 @@ export function PurchaseOrderEditor({
 
   return (
     <form onSubmit={onSubmit} className="space-y-8">
+      {documentStatus === "issued" ? (
+        <p className="rounded-md border border-amber-200/80 bg-amber-50 px-3 py-2 text-sm text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
+          This purchase order is issued. Saving updates the document and records what changed; that history appears on the
+          purchase order detail screen only (not on print or PDF).
+        </p>
+      ) : null}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:flex xl:flex-wrap xl:items-end">
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-[var(--muted)]">Purchase order date</span>
@@ -1022,7 +1044,7 @@ export function PurchaseOrderEditor({
           <table className="w-full min-w-[960px] border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-[var(--border)] text-[var(--muted)]">
-                <th className="py-2 pr-2 w-8">#</th>
+                <th className="py-2 pr-2 w-10">#</th>
                 <th className="py-2 pr-2 min-w-[260px]">Product / Service</th>
                 <th className="py-2 pr-2 w-24">HSN/SAC</th>
                 <th className="py-2 pr-2 min-w-[148px]">Unit</th>
@@ -1049,7 +1071,9 @@ export function PurchaseOrderEditor({
                   : null;
                 return (
                 <tr key={i} className="border-b border-[var(--border)]">
-                  <td className="py-2 pr-2 align-top text-[var(--muted)]">{i + 1}</td>
+                  <td className="py-2 pr-2 align-top">
+                    <DocumentLineMoveControls index={i} total={lines.length} onMove={moveLine} />
+                  </td>
                   <td className="py-2 pr-2 align-top">
                     <div className="flex flex-col gap-2">
                       <div>

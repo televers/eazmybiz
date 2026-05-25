@@ -403,7 +403,7 @@ export function PurchaseOrderPdfDocument(props: PurchaseOrderPdfInput) {
           <View>
             <Text style={styles.issuedFirst}>First issued on: {formatDateTimeIst(props.issuedAt)}</Text>
             <Text style={styles.issued}>
-              Last updated on: {props.updatedAt ? formatDateTimeIst(props.updatedAt) : "—"}
+              Last revised at: {props.updatedAt ? formatDateTimeIst(props.updatedAt) : "—"}
             </Text>
           </View>
         ) : null}

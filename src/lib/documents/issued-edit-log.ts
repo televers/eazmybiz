@@ -10,6 +10,7 @@ export async function insertIssuedDocumentEditLog(
     documentId: string;
     editedByUserId: string;
     editedByDisplayName: string | null;
+    summaryLines?: string[];
   },
 ) {
   const { error } = await supabase.from("issued_document_edit_log").insert({
@@ -18,6 +19,7 @@ export async function insertIssuedDocumentEditLog(
     document_id: input.documentId,
     edited_by_user_id: input.editedByUserId,
     edited_by_display_name: input.editedByDisplayName,
+    summary_lines: input.summaryLines?.length ? input.summaryLines : null,
   });
   if (error) throw error;
 }
@@ -28,11 +30,16 @@ export async function fetchIssuedDocumentEditLog(
   docKind: IssuedDocKind,
   documentId: string,
 ): Promise<
-  { edited_at: string; edited_by_display_name: string | null; edited_by_user_id: string }[]
+  {
+    edited_at: string;
+    edited_by_display_name: string | null;
+    edited_by_user_id: string;
+    summary_lines: string[] | null;
+  }[]
 > {
   const { data, error } = await supabase
     .from("issued_document_edit_log")
-    .select("edited_at, edited_by_display_name, edited_by_user_id")
+    .select("edited_at, edited_by_display_name, edited_by_user_id, summary_lines")
     .eq("organization_id", organizationId)
     .eq("doc_kind", docKind)
     .eq("document_id", documentId)
@@ -43,6 +50,7 @@ export async function fetchIssuedDocumentEditLog(
     edited_at: string;
     edited_by_display_name: string | null;
     edited_by_user_id: string;
+    summary_lines: string[] | null;
   }[];
 }
 

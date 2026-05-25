@@ -30,6 +30,8 @@ import { confirmPartyChange } from "@/lib/parties/confirm-party-change";
 import { addressStructuralEqual } from "@/lib/parties/snapshot";
 import type { SavedItemRow } from "@/lib/items/saved-item-types";
 import { ItemDescriptionWithSavedSuggest } from "@/components/items/item-description-saved-suggest";
+import { DocumentLineMoveControls } from "@/components/documents/document-line-move-controls";
+import { moveArrayItem } from "@/lib/ui/move-array-item";
 import { savedItemDetailsSubtitle } from "@/lib/items/saved-item-subtitle";
 import { CURRENCY_OPTIONS } from "@/lib/currencies";
 import {
@@ -413,6 +415,16 @@ export function DeliveryChallanEditor({
     setTaxCustomDraft((prev) => (prev.length <= 1 ? prev : prev.filter((_, j) => j !== i)));
     setQtyDraft((prev) => (prev.length <= 1 ? prev : prev.filter((_, j) => j !== i)));
     setUnitPriceDraft((prev) => (prev.length <= 1 ? prev : prev.filter((_, j) => j !== i)));
+  }
+
+  function moveLine(i: number, delta: -1 | 1) {
+    const j = i + delta;
+    if (j < 0 || j >= lines.length) return;
+    setLines((prev) => moveArrayItem(prev, i, j));
+    setLineTaxCustom((prev) => moveArrayItem(prev, i, j));
+    setTaxCustomDraft((prev) => moveArrayItem(prev, i, j));
+    setQtyDraft((prev) => moveArrayItem(prev, i, j));
+    setUnitPriceDraft((prev) => moveArrayItem(prev, i, j));
   }
 
   function normalizeAdditionalChargesPayload(): DeliveryChallanAdditionalChargeInput[] {
@@ -871,7 +883,7 @@ export function DeliveryChallanEditor({
           <table className="w-full min-w-[960px] border-collapse text-left text-sm">
             <thead className="bg-[var(--card)] text-[var(--muted)]">
               <tr>
-                <th className="px-2 py-2 font-medium">#</th>
+                <th className="px-2 py-2 font-medium w-10">#</th>
                 <th className="px-2 py-2 font-medium min-w-[200px]">Description *</th>
                 <th className="px-2 py-2 font-medium">HSN/SAC</th>
                 <th className="px-2 py-2 font-medium min-w-[148px]">Unit</th>
@@ -898,7 +910,9 @@ export function DeliveryChallanEditor({
                   : null;
                 return (
                 <tr key={i} className="border-t border-[var(--border)]">
-                  <td className="px-2 py-2 align-top text-[var(--muted)]">{i + 1}</td>
+                  <td className="px-2 py-2 align-top">
+                    <DocumentLineMoveControls index={i} total={lines.length} onMove={moveLine} />
+                  </td>
                   <td className="px-2 py-2 align-top">
                     <div className="flex flex-col gap-2">
                       <div className="flex gap-1">

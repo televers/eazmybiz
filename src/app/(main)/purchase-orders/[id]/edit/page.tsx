@@ -1,12 +1,11 @@
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/org";
 import { loadPartiesWithAddresses } from "@/lib/parties/load-parties";
 import { linesFromJson } from "@/lib/quotation/parse";
 import { PurchaseOrderEditor } from "@/components/purchase-order/purchase-order-editor";
 import { mapRowToSavedItem } from "@/lib/items/map-saved-item-row";
-import { canEditIssuedDocument } from "@/lib/documents/issued-edit-window";
 import { orgDocumentDatePickerBounds } from "@/lib/documents/document-date-backdate-policy";
 import {
   documentNumberingCreateProps,
@@ -28,12 +27,6 @@ export default async function EditPurchaseOrderPage({ params }: { params: Promis
     .maybeSingle();
 
   if (!row) notFound();
-
-  const st = (row as { status?: string }).status;
-  const issuedAt = (row as { issued_at?: string | null }).issued_at;
-  if (st === "issued" && issuedAt && !canEditIssuedDocument(issuedAt)) {
-    redirect(`/purchase-orders/${id}`);
-  }
 
   const parties = await loadPartiesWithAddresses(ctx.organization.id);
   const docBounds = orgDocumentDatePickerBounds(ctx);

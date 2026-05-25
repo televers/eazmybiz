@@ -8,6 +8,11 @@ export function canEditIssuedDocument(issuedAt: string | null | undefined): bool
   return Date.now() <= t + ISSUED_EDIT_WINDOW_MS;
 }
 
+/** Issued purchase orders remain editable without a time limit. */
+export function canEditIssuedPurchaseOrder(issuedAt: string | null | undefined): boolean {
+  return Boolean(issuedAt);
+}
+
 /** Native `title` on disabled Edit control — do not surface elsewhere. */
 export const ISSUED_EDIT_DISABLED_HOVER =
   "Edits to issued documents are allowed up to 8 hours from the issue time.";

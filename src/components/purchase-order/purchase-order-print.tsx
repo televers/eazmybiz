@@ -300,7 +300,7 @@ export function PurchaseOrderPrintView(props: PurchaseOrderPrintProps) {
       ) : props.issuedAt ? (
         <div className="mt-4 space-y-1 text-center text-xs text-slate-500">
           <p>First issued on: {formatDateTimeIst(props.issuedAt)}</p>
-          <p>Last updated on: {props.updatedAt ? formatDateTimeIst(props.updatedAt) : "—"}</p>
+          <p>Last revised at: {props.updatedAt ? formatDateTimeIst(props.updatedAt) : "—"}</p>
         </div>
       ) : null}
 

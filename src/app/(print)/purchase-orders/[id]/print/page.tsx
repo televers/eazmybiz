@@ -8,7 +8,6 @@ import { additionalChargesFromJson, linesFromJson } from "@/lib/quotation/parse"
 import { partyFromJson } from "@/lib/packing/parse";
 import { publicObjectUrl } from "@/lib/storage-public-url";
 import { PurchaseOrderPrintView } from "@/components/purchase-order/purchase-order-print";
-import { canEditIssuedDocument, ISSUED_EDIT_DISABLED_HOVER } from "@/lib/documents/issued-edit-window";
 import { primaryButtonMd } from "@/lib/ui/primary-button";
 import { parsePackingListTemplateId } from "@/lib/packing/packing-list-templates";
 import { IssuePurchaseOrderButton } from "@/app/(main)/purchase-orders/[id]/ui";
@@ -42,7 +41,6 @@ export default async function PurchaseOrderPrintPage({ params }: { params: Promi
     ? publicObjectUrl("org-logos", ctx.organization.logo_storage_path)
     : null;
   const issuedAt = (row as { issued_at?: string | null }).issued_at ?? null;
-  const editAllowed = row.status !== "issued" || canEditIssuedDocument(issuedAt);
 
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
@@ -86,21 +84,12 @@ export default async function PurchaseOrderPrintPage({ params }: { params: Promi
         </SalesDocumentScreenPrintPreview>
 
         <div className="mt-6 flex flex-wrap items-center justify-center gap-2 print:hidden">
-          {editAllowed ? (
-            <Link
-              href={`/purchase-orders/${id}/edit`}
-              className="rounded-md border border-[var(--border)] px-4 py-2 text-sm hover:bg-[var(--border)]"
-            >
-              Edit
-            </Link>
-          ) : (
-            <span
-              className="cursor-not-allowed rounded-md border border-[var(--border)] px-4 py-2 text-sm text-[var(--muted)] opacity-60"
-              title={ISSUED_EDIT_DISABLED_HOVER}
-            >
-              Edit
-            </span>
-          )}
+          <Link
+            href={`/purchase-orders/${id}/edit`}
+            className="rounded-md border border-[var(--border)] px-4 py-2 text-sm hover:bg-[var(--border)]"
+          >
+            Edit
+          </Link>
           {row.status === "issued" ? (
             <a href={`/api/purchase-orders/${id}/pdf`} className={primaryButtonMd}>
               Download PDF

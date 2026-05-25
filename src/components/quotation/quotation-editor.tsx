@@ -64,6 +64,8 @@ import {
 import type { PackingListTemplateId } from "@/lib/packing/types";
 import type { SavedItemRow } from "@/lib/items/saved-item-types";
 import { ItemDescriptionWithSavedSuggest } from "@/components/items/item-description-saved-suggest";
+import { DocumentLineMoveControls } from "@/components/documents/document-line-move-controls";
+import { moveArrayItem } from "@/lib/ui/move-array-item";
 import { savedItemDetailsSubtitle } from "@/lib/items/saved-item-subtitle";
 
 const TAX_DECIMAL_PLACES = 3;
@@ -447,6 +449,16 @@ export function QuotationEditor({
     setUnitPriceDraft((prev) => (prev.length <= 1 ? prev : prev.filter((_, j) => j !== i)));
   }
 
+  function moveLine(i: number, delta: -1 | 1) {
+    const j = i + delta;
+    if (j < 0 || j >= lines.length) return;
+    setLines((prev) => moveArrayItem(prev, i, j));
+    setLineTaxCustom((prev) => moveArrayItem(prev, i, j));
+    setTaxCustomDraft((prev) => moveArrayItem(prev, i, j));
+    setQtyDraft((prev) => moveArrayItem(prev, i, j));
+    setUnitPriceDraft((prev) => moveArrayItem(prev, i, j));
+  }
+
   /** Apply qty, unit price, and tax drafts so save matches the form (handles submit without blur). */
   function normalizeAdditionalChargesPayload(): {
     label: string;
@@ -793,7 +805,7 @@ export function QuotationEditor({
           <table className="w-full min-w-[960px] border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-[var(--border)] text-[var(--muted)]">
-                <th className="py-2 pr-2 w-8">#</th>
+                <th className="py-2 pr-2 w-10">#</th>
                 <th className="py-2 pr-2 min-w-[260px]">Product / Service</th>
                 <th className="py-2 pr-2 w-24">HSN/SAC</th>
                 <th className="py-2 pr-2 min-w-[148px]">Unit</th>
@@ -820,7 +832,9 @@ export function QuotationEditor({
                   : null;
                 return (
                 <tr key={i} className="border-b border-[var(--border)]">
-                  <td className="py-2 pr-2 align-top text-[var(--muted)]">{i + 1}</td>
+                  <td className="py-2 pr-2 align-top">
+                    <DocumentLineMoveControls index={i} total={lines.length} onMove={moveLine} />
+                  </td>
                   <td className="py-2 pr-2 align-top">
                     <div className="flex flex-col gap-2">
                       <div>

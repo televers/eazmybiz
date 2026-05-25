@@ -54,7 +54,7 @@ function TermsCard({ item }: { item: TermsItem }) {
           <button
             type="button"
             onClick={() => {
-              setDraft(item.value);
+              setDraft(item.value.trim() || item.defaultText());
               setEditing(true);
               setError(null);
             }}

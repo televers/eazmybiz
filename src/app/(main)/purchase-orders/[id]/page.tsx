@@ -12,7 +12,7 @@ import { formatQuotationOptionalDetailLine } from "@/lib/quotation/format-line";
 import { primaryButtonMd } from "@/lib/ui/primary-button";
 import { IssuePurchaseOrderButton } from "./ui";
 import { formatCreatedByLabel } from "@/lib/documents/created-by-label";
-import { canEditIssuedDocument, ISSUED_EDIT_DISABLED_HOVER } from "@/lib/documents/issued-edit-window";
+import { canEditIssuedPurchaseOrder } from "@/lib/documents/issued-edit-window";
 import { fetchIssuedDocumentEditLog } from "@/lib/documents/issued-edit-log";
 import { IssuedDocumentDetailFooter } from "@/components/documents/issued-document-detail-footer";
 import { DeleteDraftSalesDocumentButton } from "@/components/documents/delete-draft-sales-document-button";
@@ -49,7 +49,7 @@ export default async function PurchaseOrderDetailPage({ params }: { params: Prom
     row.status === "issued"
       ? await fetchIssuedDocumentEditLog(supabase, ctx.organization.id, "purchase_order", id)
       : [];
-  const editAllowed = row.status !== "issued" || canEditIssuedDocument(issuedAt);
+  const editAllowed = row.status !== "issued" || canEditIssuedPurchaseOrder(issuedAt);
 
   return (
     <div className="space-y-6">
@@ -96,14 +96,7 @@ export default async function PurchaseOrderDetailPage({ params }: { params: Prom
               >
                 Edit
               </Link>
-            ) : (
-              <span
-                className="inline-flex min-h-11 w-full cursor-not-allowed items-center justify-center rounded-md border border-[var(--border)] px-4 py-2 text-sm text-[var(--muted)] opacity-60 sm:w-auto"
-                title={ISSUED_EDIT_DISABLED_HOVER}
-              >
-                Edit
-              </span>
-            )}
+            ) : null}
             {row.status === "draft" ? (
               <>
                 <IssuePurchaseOrderButton id={id} />
@@ -251,9 +244,11 @@ export default async function PurchaseOrderDetailPage({ params }: { params: Prom
         <IssuedDocumentDetailFooter
           firstIssuedAt={issuedAt}
           lastUpdatedAt={updatedAt}
+          lastUpdatedLabel="Last revised at"
           editLog={editLog.map((e) => ({
             edited_at: e.edited_at,
             edited_by_display_name: e.edited_by_display_name,
+            summary_lines: e.summary_lines,
           }))}
         />
       ) : null}
