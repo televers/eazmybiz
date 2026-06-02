@@ -49,6 +49,7 @@ import { QuotationAdditionalChargesSection } from "@/components/quotation/quotat
 import { defaultQuotationValidUntilYmd } from "@/lib/quotation/dates";
 import { quotationIssuedEditSummaryLines } from "@/lib/quotation/issued-edit-diff";
 import { confirmPartyChange } from "@/lib/parties/confirm-party-change";
+import { partySnapshotHasAddressContent } from "@/components/purchase-order/party-address-preview";
 import { errorMessage } from "@/lib/errors";
 import { primaryButtonMd } from "@/lib/ui/primary-button";
 import type { PlanTier } from "@/types/database";
@@ -63,10 +64,9 @@ import {
 } from "@/lib/packing/packing-list-templates";
 import type { PackingListTemplateId } from "@/lib/packing/types";
 import type { SavedItemRow } from "@/lib/items/saved-item-types";
-import { ItemDescriptionWithSavedSuggest } from "@/components/items/item-description-saved-suggest";
+import { ItemDescriptionWithSavedSuggest, SavedItemLineNamePreview } from "@/components/items/item-description-saved-suggest";
 import { DocumentLineMoveControls } from "@/components/documents/document-line-move-controls";
 import { moveArrayItem } from "@/lib/ui/move-array-item";
-import { savedItemDetailsSubtitle } from "@/lib/items/saved-item-subtitle";
 
 const TAX_DECIMAL_PLACES = 3;
 
@@ -343,6 +343,13 @@ export function QuotationEditor({
   const [notes, setNotes] = useState(initial?.notes ?? "");
   const [linkedPartyId, setLinkedPartyId] = useState<string | null>(() => initial?.party_id ?? null);
   const [billLoadedFromParty, setBillLoadedFromParty] = useState(() => Boolean(initial?.party_id));
+  const billFromSavedParty = Boolean(
+    linkedPartyId && (billLoadedFromParty || documentStatus === "issued"),
+  );
+  const billShowCompact =
+    billFromSavedParty ||
+    (documentStatus === "issued" && partySnapshotHasAddressContent(billTo));
+  const billLockAddress = billFromSavedParty || documentStatus === "issued";
   const [billAddressLockVersion, setBillAddressLockVersion] = useState(0);
   const [savePartyFlags, savePartyUi] = useSavePartyFlags("bill_only", billTo, undefined, {
     partyLinkedId: linkedPartyId,
@@ -749,12 +756,14 @@ export function QuotationEditor({
           onChange={setBillTo}
           parties={parties}
           pickTarget="bill"
+          dense={!billShowCompact}
+          compactAddressPreview={billShowCompact}
           partyNameCombobox={!partyPickerDisabled}
           onReleasePartyLink={() => {
             setLinkedPartyId(null);
             setBillLoadedFromParty(false);
           }}
-          lockAddressFields={billLoadedFromParty || documentStatus === "issued"}
+          lockAddressFields={billLockAddress}
           partyAddressRowId={billPartyAddressId}
           addressLockVersion={billAddressLockVersion}
           selectedLoadPartyId={
@@ -764,7 +773,9 @@ export function QuotationEditor({
           addressLockHint={
             documentStatus === "issued"
               ? "This quotation is issued — customer name, address, and GSTIN cannot be changed. You may still update contact person and mobile when needed."
-              : null
+              : billShowCompact
+                ? "Choose “—” on Load party to enter a new customer manually."
+                : null
           }
           organizationCountryCode={organizationCountryCode}
           billingCountryCode={billingCountryCode}
@@ -827,9 +838,6 @@ export function QuotationEditor({
                 const locked = Boolean(line.item_preset_id);
                 const isNewItemLine = !line.item_preset_id;
                 const lockCls = locked ? " cursor-not-allowed bg-[var(--muted)]/10 opacity-90" : "";
-                const catalogSubtitle = locked
-                  ? savedItemDetailsSubtitle(line, { omitHsn: true })
-                  : null;
                 return (
                 <tr key={i} className="border-b border-[var(--border)]">
                   <td className="py-2 pr-2 align-top">
@@ -846,17 +854,18 @@ export function QuotationEditor({
                             {locked ? (
                               <>
                                 <input
-                                  readOnly
-                                  className={field + lockCls + " w-full"}
+                                  type="hidden"
                                   value={line.description}
-                                  placeholder="e.g. Product or service title"
                                   required
+                                  readOnly
+                                  tabIndex={-1}
+                                  aria-hidden
                                 />
-                                {catalogSubtitle ? (
-                                  <p className="text-[11px] leading-snug text-[var(--muted)]">
-                                    {catalogSubtitle}
-                                  </p>
-                                ) : null}
+                                <SavedItemLineNamePreview
+                                  description={line.description}
+                                  make_service_provider={line.make_service_provider}
+                                  model_part_no_description={line.model_part_no_description}
+                                />
                               </>
                             ) : (
                               <ItemDescriptionWithSavedSuggest

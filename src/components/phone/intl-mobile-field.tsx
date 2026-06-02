@@ -198,11 +198,6 @@ export function IntlMobileField({
         />
       </div>
       {localError ? <p className="mt-1 text-[11px] text-red-600">{localError}</p> : null}
-      <p className="mt-1 text-[11px] text-[var(--muted)]">
-        {ri === "+91"
-          ? "India: 10 digits starting with 6–9. Default follows your company country; use Other calling code if needed."
-          : "National number only (no leading 0). Default follows your company’s ISO country; open the list and type a letter to jump."}
-      </p>
     </div>
   );
 }

@@ -73,10 +73,9 @@ import {
 } from "@/lib/packing/packing-list-templates";
 import type { PackingListTemplateId } from "@/lib/packing/types";
 import type { SavedItemRow } from "@/lib/items/saved-item-types";
-import { ItemDescriptionWithSavedSuggest } from "@/components/items/item-description-saved-suggest";
+import { ItemDescriptionWithSavedSuggest, SavedItemLineNamePreview } from "@/components/items/item-description-saved-suggest";
 import { DocumentLineMoveControls } from "@/components/documents/document-line-move-controls";
 import { moveArrayItem } from "@/lib/ui/move-array-item";
-import { savedItemDetailsSubtitle } from "@/lib/items/saved-item-subtitle";
 
 const TAX_DECIMAL_PLACES = 3;
 
@@ -1066,9 +1065,6 @@ export function PurchaseOrderEditor({
                 const locked = Boolean(line.item_preset_id);
                 const isNewItemLine = !line.item_preset_id;
                 const lockCls = locked ? " cursor-not-allowed bg-[var(--muted)]/10 opacity-90" : "";
-                const catalogSubtitle = locked
-                  ? savedItemDetailsSubtitle(line, { omitHsn: true })
-                  : null;
                 return (
                 <tr key={i} className="border-b border-[var(--border)]">
                   <td className="py-2 pr-2 align-top">
@@ -1085,17 +1081,18 @@ export function PurchaseOrderEditor({
                             {locked ? (
                               <>
                                 <input
-                                  readOnly
-                                  className={field + lockCls + " w-full"}
+                                  type="hidden"
                                   value={line.description}
-                                  placeholder="e.g. Product or service title"
                                   required
+                                  readOnly
+                                  tabIndex={-1}
+                                  aria-hidden
                                 />
-                                {catalogSubtitle ? (
-                                  <p className="text-[11px] leading-snug text-[var(--muted)]">
-                                    {catalogSubtitle}
-                                  </p>
-                                ) : null}
+                                <SavedItemLineNamePreview
+                                  description={line.description}
+                                  make_service_provider={line.make_service_provider}
+                                  model_part_no_description={line.model_part_no_description}
+                                />
                               </>
                             ) : (
                               <ItemDescriptionWithSavedSuggest

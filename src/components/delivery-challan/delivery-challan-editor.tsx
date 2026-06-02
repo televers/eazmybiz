@@ -27,12 +27,12 @@ import {
 } from "@/components/packing/party-fields";
 import { useSavePartyFlags } from "@/components/packing/save-party-section";
 import { confirmPartyChange } from "@/lib/parties/confirm-party-change";
+import { partySnapshotHasAddressContent } from "@/components/purchase-order/party-address-preview";
 import { addressStructuralEqual } from "@/lib/parties/snapshot";
 import type { SavedItemRow } from "@/lib/items/saved-item-types";
-import { ItemDescriptionWithSavedSuggest } from "@/components/items/item-description-saved-suggest";
+import { ItemDescriptionWithSavedSuggest, SavedItemLineNamePreview } from "@/components/items/item-description-saved-suggest";
 import { DocumentLineMoveControls } from "@/components/documents/document-line-move-controls";
 import { moveArrayItem } from "@/lib/ui/move-array-item";
-import { savedItemDetailsSubtitle } from "@/lib/items/saved-item-subtitle";
 import { CURRENCY_OPTIONS } from "@/lib/currencies";
 import {
   isPresetQuotationUnit,
@@ -363,6 +363,27 @@ export function DeliveryChallanEditor({
     linkedPartyId && (listStatus === "issued" || billLoadedFromParty) ? linkedPartyId : null;
   const shipLoadPartySelectId =
     linkedPartyId && (listStatus === "issued" || shipLoadedFromParty) ? linkedPartyId : null;
+
+  const billFromSavedParty = Boolean(
+    linkedPartyId && (billLoadedFromParty || listStatus === "issued"),
+  );
+  const billShowCompact =
+    billFromSavedParty ||
+    (listStatus === "issued" && partySnapshotHasAddressContent(billTo));
+  const billLockAddress = billFromSavedParty || listStatus === "issued";
+
+  const shipFromSavedParty = Boolean(
+    linkedPartyId && (shipLoadedFromParty || listStatus === "issued"),
+  );
+  const shipLockAddress =
+    (shipLoadedFromParty && Boolean(linkedPartyId)) ||
+    listStatus === "issued" ||
+    (shipSameAsBill && billLockAddress);
+  const shipShowCompact =
+    shipFromSavedParty ||
+    (listStatus === "issued" && partySnapshotHasAddressContent(shipTo)) ||
+    (shipSameAsBill && billShowCompact && partySnapshotHasAddressContent(shipTo));
+
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const partyPickerDisabled = listStatus === "issued";
@@ -685,9 +706,11 @@ export function DeliveryChallanEditor({
             onChange={setBillTo}
             parties={parties}
             pickTarget="bill"
+            dense={!billShowCompact}
+            compactAddressPreview={billShowCompact}
             partyNameCombobox={!partyPickerDisabled}
             onReleasePartyLink={releaseBillPartyLink}
-            lockAddressFields={billLoadedFromParty || listStatus === "issued"}
+            lockAddressFields={billLockAddress}
             partyAddressRowId={billPartyAddressId}
             addressLockVersion={billAddressLockVersion}
             selectedLoadPartyId={billLoadPartySelectId}
@@ -695,7 +718,9 @@ export function DeliveryChallanEditor({
             addressLockHint={
               listStatus === "issued"
                 ? "This challan is issued — billing name, address, and GSTIN cannot be changed. The linked party cannot be switched. You may still update contact person and mobile when needed."
-                : null
+                : billShowCompact
+                  ? "Choose “—” on Load party to enter a new customer manually."
+                  : null
             }
             organizationCountryCode={organizationCountryCode}
             billingCountryCode={billingCountryCode}
@@ -799,9 +824,9 @@ export function DeliveryChallanEditor({
               pickTarget="ship"
               shipSlotIndex={shipSlotLoad}
               hideLoadPartyPicker
-              lockAddressFields={
-                (shipLoadedFromParty && Boolean(linkedPartyId)) || listStatus === "issued"
-              }
+              dense={!shipShowCompact}
+              compactAddressPreview={shipShowCompact}
+              lockAddressFields={shipLockAddress}
               partyAddressRowId={shipPartyAddressId}
               addressLockVersion={shipAddressLockVersion}
               selectedLoadPartyId={shipLoadPartySelectId}
@@ -809,7 +834,9 @@ export function DeliveryChallanEditor({
               addressLockHint={
                 listStatus === "issued"
                   ? "This challan is issued — shipping name, address, and GSTIN cannot be changed. You may still update contact person and mobile when needed."
-                  : null
+                  : shipShowCompact && shipFromSavedParty
+                    ? "Choose “Custom address (edit below)” to enter a custom ship-to."
+                    : null
               }
               organizationCountryCode={organizationCountryCode}
             billingCountryCode={billingCountryCode}
@@ -905,9 +932,6 @@ export function DeliveryChallanEditor({
                 const locked = Boolean(line.item_preset_id);
                 const isNewItemLine = !line.item_preset_id;
                 const lockCls = locked ? " cursor-not-allowed bg-[var(--muted)]/10 opacity-90" : "";
-                const catalogSubtitle = locked
-                  ? savedItemDetailsSubtitle(line, { omitHsn: true })
-                  : null;
                 return (
                 <tr key={i} className="border-t border-[var(--border)]">
                   <td className="px-2 py-2 align-top">
@@ -920,17 +944,18 @@ export function DeliveryChallanEditor({
                           {locked ? (
                             <>
                               <input
+                                type="hidden"
+                                value={line.description}
                                 required
                                 readOnly
-                                value={line.description}
-                                className={field + lockCls + " w-full"}
-                                placeholder="Product / service name"
+                                tabIndex={-1}
+                                aria-hidden
                               />
-                              {catalogSubtitle ? (
-                                <p className="text-[11px] leading-snug text-[var(--muted)]">
-                                  {catalogSubtitle}
-                                </p>
-                              ) : null}
+                              <SavedItemLineNamePreview
+                                description={line.description}
+                                make_service_provider={line.make_service_provider}
+                                model_part_no_description={line.model_part_no_description}
+                              />
                             </>
                           ) : (
                             <ItemDescriptionWithSavedSuggest
